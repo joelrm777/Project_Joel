@@ -62,8 +62,14 @@ public class ServicioCartelera(CineDbContext datos) : IServicioCartelera
             .Select(b => new { b.Fila, b.Numero })
             .ToListAsync();
 
+        // Un apartado vencido no ocupa nada: su butaca se ve y se vende como libre aunque su
+        // fila todavía exista (RN-20, RNF-5). La hora del vencimiento la da el motor.
+        var ahora = await RelojDelMotor.AhoraAsync(datos);
+
         var ocupadas = await datos.OcupacionesButaca
             .Where(o => o.FuncionId == funcionId)
+            .Where(o => o.Estado == EstadoButaca.Vendida
+                        || (o.Apartado != null && o.Apartado.VenceEn > ahora))
             .Select(o => new { o.Fila, o.Numero, o.Estado })
             .ToListAsync();
 

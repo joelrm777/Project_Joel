@@ -163,6 +163,73 @@ h2 {
     cursor: not-allowed;
 }
 
+.butaca.mia {
+    background: #2f6f4f;
+    border-color: #1e4a34;
+    color: #fff;
+    font-weight: 700;
+}
+
+.butaca.libre {
+    cursor: pointer;
+}
+
+.compra {
+    margin-top: 1rem;
+    padding: 0.85rem;
+    border: 1px solid #e2e2e2;
+    border-radius: 0.5rem;
+}
+
+.compra label {
+    display: block;
+    font-size: 0.8rem;
+    color: #5b5b5b;
+    margin-bottom: 0.25rem;
+}
+
+.compra input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #c4c4c4;
+    border-radius: 0.35rem;
+    font-size: 1rem;
+}
+
+.compra button {
+    margin-top: 0.6rem;
+    width: 100%;
+    padding: 0.7rem;
+    border: 0;
+    border-radius: 0.35rem;
+    background: #2f6f4f;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.compra button:disabled {
+    background: #b9c7c0;
+}
+
+.error {
+    margin: 0.6rem 0 0;
+    color: #8c2b2b;
+    font-size: 0.9rem;
+}
+
+.confirmacion {
+    margin-top: 1rem;
+    padding: 0.85rem;
+    border: 2px solid #2f6f4f;
+    border-radius: 0.5rem;
+}
+
+.confirmacion strong {
+    font-size: 1.3rem;
+    letter-spacing: 0.05em;
+}
+
 .leyenda {
     display: flex;
     flex-wrap: wrap;

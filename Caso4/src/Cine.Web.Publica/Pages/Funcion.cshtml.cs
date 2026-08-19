@@ -8,6 +8,9 @@ namespace Cine.Web.Publica.Pages;
 /// <summary>El mapa de butacas de una función, con el estado de cada una (RF-9).</summary>
 public class FuncionModel(IServicioCartelera cartelera) : PageModel
 {
+    /// <summary>Lo que hoy cuesta cada butaca. La tarifa por fecha llega en la pieza 3.</summary>
+    public static decimal TarifaGeneral => ServicioVenta.TarifaGeneralProvisional;
+
     [BindProperty(SupportsGet = true)]
     public int FuncionId { get; set; }
 

@@ -6,8 +6,9 @@ cada pieza cerrada tiene su evidencia anotada ahí.
 
 ## Qué corre hoy
 
-Pieza 1 cerrada: la cartelera de la semana y el mapa de butacas de una función, en la aplicación
-pública, sin identificarse.
+Piezas 1 y 2 cerradas: la cartelera de la semana, el mapa de butacas de una función, y la compra
+en línea a tarifa general —apartar butacas por 10 minutos, soltarlas y pagar simulado con su
+código de confirmación—, todo sin identificarse.
 
 ## Qué hace falta tener instalado
 
@@ -38,6 +39,13 @@ ASPNETCORE_URLS=http://localhost:5080 dotnet run --project src/Cine.Web.Publica 
 - `/` — cartelera de la semana en curso, de jueves a miércoles.
 - `/funcion/{id}` — mapa de butacas de una función; se actualiza solo cada 5 segundos.
 - `/api/funciones/{id}/mapa` — el mismo mapa en JSON, que es lo que consulta la pantalla.
+- `POST /api/funciones/{id}/apartar` — aparta butacas por 10 minutos para la sesión del visitante.
+- `POST /api/apartados/{id}/liberar` — suelta una butaca antes de pagar.
+- `POST /api/apartados/{id}/pagar` — registra la compra pagada y devuelve el código.
+
+El pago es simulado: el sistema registra que la compra quedó pagada y no toca ningún medio de
+pago. Cada butaca se cobra a la tarifa general provisional de ₡3 500 hasta que la pieza 3 traiga
+las tarifas que fija la administradora.
 
 ## Cómo se recrean los datos de prueba
 
@@ -74,7 +82,7 @@ Las pruebas crean y borran su propia base en LocalDB, con nombre `CinePruebas_<i
 ```
 Caso4/
   src/Cine.Nucleo/          biblioteca de dominio: entidades, reglas y acceso a datos
-  src/Cine.Web.Publica/     aplicación del comprador: cartelera y mapa de butacas
+  src/Cine.Web.Publica/     aplicación del comprador: cartelera, mapa de butacas y compra
   pruebas/Cine.Nucleo.Pruebas/
   PLAN.md                   el plan de construcción, con la evidencia de cada pieza cerrada
 ```

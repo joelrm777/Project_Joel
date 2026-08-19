@@ -40,12 +40,28 @@
 
 <ul class="leyenda">
     <li><span class="butaca libre"></span> libre</li>
+    <li><span class="butaca mia"></span> suya</li>
     <li><span class="butaca apartada"></span> apartada</li>
     <li><span class="butaca vendida"></span> vendida</li>
     <li><span class="butaca novendible"></span> no vendible</li>
 </ul>
 
 <p class="aviso" id="aviso">El mapa se actualiza solo cada 5 segundos.</p>
+
+<section class="compra" id="compra" data-tarifa="@FuncionModel.TarifaGeneral">
+    <p id="seleccion">Toque las butacas que quiere. Cada una queda apartada 10 minutos.</p>
+    <p id="plazo" hidden></p>
+    <label for="correo">Correo (opcional, para recibir el código)</label>
+    <input type="email" id="correo" name="correo" autocomplete="email" placeholder="nombre@ejemplo.cr" />
+    <button type="button" id="pagar" disabled>Pagar</button>
+    <p class="error" id="error" hidden></p>
+</section>
+
+<section class="confirmacion" id="confirmacion" hidden>
+    <h2>Compra confirmada</h2>
+    <p>Su código es <strong id="codigo"></strong>. Preséntelo en la puerta.</p>
+    <p id="detalleCompra"></p>
+</section>
 
 @section Scripts {
     <script src="~/js/mapa.js" asp-append-version="true"></script>

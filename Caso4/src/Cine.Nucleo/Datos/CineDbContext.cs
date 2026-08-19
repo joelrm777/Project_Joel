@@ -11,6 +11,9 @@ public class CineDbContext(DbContextOptions<CineDbContext> opciones) : DbContext
     public DbSet<Funcion> Funciones => Set<Funcion>();
     public DbSet<ButacaNoVendibleFuncion> ButacasNoVendiblesFuncion => Set<ButacaNoVendibleFuncion>();
     public DbSet<OcupacionButaca> OcupacionesButaca => Set<OcupacionButaca>();
+    public DbSet<Apartado> Apartados => Set<Apartado>();
+    public DbSet<Compra> Compras => Set<Compra>();
+    public DbSet<Boleto> Boletos => Set<Boleto>();
 
     protected override void OnModelCreating(ModelBuilder modelo)
     {
@@ -61,6 +64,47 @@ public class CineDbContext(DbContextOptions<CineDbContext> opciones) : DbContext
             // La regla que ningún código puede garantizar solo: una butaca de una función
             // pertenece a lo sumo a uno (decisión 1 de DISENO.md, CA-1, RNF-1).
             e.HasIndex(o => new { o.FuncionId, o.Fila, o.Numero }).IsUnique();
+
+            e.HasOne(o => o.Apartado).WithMany(a => a.Ocupaciones)
+                .HasForeignKey(o => o.ApartadoId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelo.Entity<Apartado>(e =>
+        {
+            e.ToTable("Apartado");
+            e.Property(a => a.TokenSesion).HasMaxLength(64).IsRequired();
+            // Sin cascada desde la función: la ocupación ya cae en cascada por su función y por
+            // su apartado, y dos caminos de borrado a la misma tabla no los acepta el motor.
+            // Borrar el apartado y sus butacas es siempre un acto explícito del núcleo.
+            e.HasOne(a => a.Funcion).WithMany().HasForeignKey(a => a.FuncionId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            e.HasIndex(a => a.VenceEn);
+        });
+
+        modelo.Entity<Compra>(e =>
+        {
+            e.ToTable("Compra");
+            e.Property(c => c.Codigo).HasMaxLength(12).IsRequired();
+            e.Property(c => c.Correo).HasMaxLength(200);
+            e.Property(c => c.ClaveIdempotencia).HasMaxLength(64).IsRequired();
+            e.Property(c => c.Canal).HasConversion<string>().HasMaxLength(20);
+            e.Property(c => c.EstadoPago).HasConversion<string>().HasMaxLength(20);
+            e.HasOne(c => c.Funcion).WithMany().HasForeignKey(c => c.FuncionId);
+
+            // Un solo código por compra y una sola compra por clave de idempotencia (RN-23, RN-25).
+            e.HasIndex(c => c.Codigo).IsUnique();
+            e.HasIndex(c => c.ClaveIdempotencia).IsUnique();
+        });
+
+        modelo.Entity<Boleto>(e =>
+        {
+            e.ToTable("Boleto");
+            e.Property(b => b.Fila).HasMaxLength(2).IsRequired();
+            e.Property(b => b.Tarifa).HasConversion<string>().HasMaxLength(20);
+            e.Property(b => b.Monto).HasPrecision(10, 2);
+            e.HasOne(b => b.Compra).WithMany(c => c.Boletos).HasForeignKey(b => b.CompraId);
         });
 
         SemillaCatalogo.Aplicar(modelo);

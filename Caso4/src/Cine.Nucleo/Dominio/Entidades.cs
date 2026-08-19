@@ -94,9 +94,10 @@ public class OcupacionButaca
     /// <summary>Apartada o Vendida. Los otros dos estados no se guardan.</summary>
     public EstadoButaca Estado { get; set; }
 
-    /// <summary>Apartado dueño de la ocupación mientras no esté vendida. Lo usa la pieza 2.</summary>
+    /// <summary>Apartado dueño de la ocupación mientras no esté vendida.</summary>
     public int? ApartadoId { get; set; }
+    public Apartado? Apartado { get; set; }
 
-    /// <summary>Boleto que la vendió. Lo usa la pieza 2.</summary>
+    /// <summary>Boleto que la vendió.</summary>
     public int? BoletoId { get; set; }
 }

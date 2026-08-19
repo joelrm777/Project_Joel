@@ -50,7 +50,7 @@ carpeta.
 | # | Pieza | Depende de | Estado |
 |---|---|---|---|
 | 1 | La dueña ve la cartelera y el mapa de butacas | — | cerrada |
-| 2 | Compra en línea a tarifa general | 1 | pendiente |
+| 2 | Compra en línea a tarifa general | 1 | cerrada |
 | 3 | Tarifas y edad mínima en la compra en línea | 2 | pendiente |
 | 4 | Venta en taquilla con cuenta | 3 | pendiente |
 | 5 | Ingreso a la sala en la puerta | 4 | pendiente |
@@ -206,7 +206,42 @@ final porque un fallo de correo no invalida ninguna compra.
   - `Canal { EnLinea, Taquilla }`
   - Tablas `Apartado`, `Compra`, `Boleto`.
 
-**Evidencia**
+**Evidencia** *(18 de agosto de 2026)*
+
+- Migración `20260819010244_ApartadoCompraBoleto` aplicada sobre la base existente: agrega
+  `Apartado`, `Compra` y `Boleto`, con índices únicos en `Compra.Codigo` y
+  `Compra.ClaveIdempotencia`, y la referencia de `OcupacionButaca` a su apartado.
+- `dotnet test`: 16 pruebas, todas pasan. Las de esta pieza:
+  - Dos `ApartarAsync` simultáneos sobre C4 desde dos conexiones: exactamente uno acepta, el otro
+    devuelve `ButacaTomada` con el mapa adjunto donde C4 figura `Apartada`, y queda una sola fila
+    en `OcupacionButaca` para esa butaca (CA-1, RNF-1).
+  - Con el vencimiento movido al pasado, el mapa muestra la butaca `Libre` y otro token la aparta
+    con éxito (CA-2, RN-20).
+  - Dos `PagarAsync` con la misma clave de idempotencia: una `Compra`, el mismo código en las dos
+    respuestas, dos `Boleto`, cero `Apartado` y dos ocupaciones `Vendida` (CA-5).
+  - `PagarAsync` sobre un apartado vencido: `ApartadoVencido`, cero compras y la butaca sin
+    ocupación (RN-22).
+  - Apartar 11 butacas: `LimiteButacas`, sin dejar ninguna ocupación (RN-21).
+  - Agregar una butaca al mismo intento conserva el apartado y renueva su plazo (RN-18).
+  - Soltar una de tres butacas la devuelve a `Libre` y deja las otras dos apartadas (RF-10).
+  - Apartar A1, que es no vendible: `ButacaNoVendible` (RN-2).
+  - El boleto vendido graba `Tarifa = General` y su monto (RN-16).
+- Contra la aplicación corriendo, sobre la función 2 (Sala 2):
+  - `POST /api/funciones/2/apartar` con B5 devuelve `aceptado: true`, `apartadoId: 1` y su
+    vencimiento; agregar B6 al mismo apartado devuelve el mismo `apartadoId` con el plazo
+    renovado.
+  - Un segundo comprador que pide B5 recibe `aceptado: false`, `motivo: ButacaTomada` y el mapa
+    actualizado con B5 en `Apartada` (R-5, RF-12).
+  - `POST /api/apartados/1/liberar` con B6 la devuelve a `Libre` mientras B5 sigue `Apartada`.
+  - `POST /api/apartados/1/pagar` dos veces con la clave `clave-navegador-1` devuelve las dos
+    veces el código `CV-84TGJ` y el total 3500 (R-10, CA-5).
+  - En la base quedaron: `Compra` 1 —código `CV-84TGJ`, canal `EnLinea`, estado `Pagada`, correo
+    `cliente@ejemplo.cr`—, `Boleto` 1 con `B 5 General 3500.00`, `Apartado` 0, y B5 se ve
+    `Vendida` en el mapa.
+- La pantalla de compra muestra la selección, el total, el plazo que corre, el campo de correo y
+  el botón de pagar, y el código al confirmar. La captura se tomó con la hoja de estilo incrustada
+  porque Edge en modo headless no carga recursos por HTTP en esta máquina; el recorrido de la
+  pantalla se comprobó contra los mismos endpoints que la página llama.
 
 ---
 
