@@ -457,6 +457,15 @@ aplicaciones ASP.NET Core, sobre SQL Server Express, que soporta los dos escrito
 que la decisión 2 impone y hace cumplir la restricción de unicidad de la decisión 1. SQLite queda
 descartado por esa misma razón, no por tamaño.
 
+**Entorno de desarrollo (agregado durante la construcción):** en desarrollo la base corre sobre
+**SQL Server LocalDB** (instancia `MSSQLLocalDB`), no sobre una instalación de SQL Server Express.
+Es el mismo motor, el mismo dialecto y el mismo proveedor de Entity Framework Core, sostiene la
+restricción de unicidad de la decisión 1 y acepta que las dos aplicaciones escriban a la vez, que
+es lo que la decisión 2 exige. La razón del cambio es de entorno, no de diseño: la máquina de
+desarrollo tiene LocalDB y no tiene el servicio de SQL Server Express instalado. El destino de
+despliegue sigue siendo SQL Server Express; lo único que cambia entre uno y otro es la cadena de
+conexión.
+
 ## Otras decisiones
 
 | Decisión | Opciones consideradas | Elección | Razón |
