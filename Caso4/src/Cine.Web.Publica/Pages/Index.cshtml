@@ -1,0 +1,40 @@
+@page
+@using System.Globalization
+@model IndexModel
+@{
+    ViewData["Title"] = "Cartelera de la semana";
+    var cultura = new CultureInfo("es-CR");
+}
+
+<h1>Cartelera</h1>
+<p class="semana">
+    Semana del @Model.Desde.ToString("dddd d 'de' MMMM", cultura)
+    al @Model.Hasta.ToString("dddd d 'de' MMMM", cultura)
+</p>
+
+@if (Model.PorDia.Count == 0)
+{
+    <p class="vacio">No hay funciones programadas para esta semana.</p>
+}
+
+@foreach (var dia in Model.PorDia)
+{
+    <section class="dia">
+        <h2>@dia.Key.ToString("dddd d 'de' MMMM", cultura)</h2>
+        <ul class="funciones">
+            @foreach (var funcion in dia)
+            {
+                <li>
+                    <a asp-page="/Funcion" asp-route-funcionId="@funcion.FuncionId">
+                        <span class="hora">@funcion.InicioLocal.ToString("HH:mm")</span>
+                        <span class="titulo">@funcion.Titulo</span>
+                        <span class="detalle">
+                            @funcion.SalaNombre &middot; @funcion.DuracionMinutos min &middot;
+                            @(funcion.ClasificacionEdad == 0 ? "todo público" : $"{funcion.ClasificacionEdad} años")
+                        </span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </section>
+}

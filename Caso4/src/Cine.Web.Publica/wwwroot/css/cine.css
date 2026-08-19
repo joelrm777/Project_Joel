@@ -1,0 +1,213 @@
+/* El mapa se muestra en pantalla de teléfono sin necesidad de ampliar para distinguir una
+   butaca de otra (RNF-6): 12 butacas por fila de 22 px más separación caben en 390 px. */
+
+:root {
+    --libre: #f4f4f4;
+    --libre-borde: #9a9a9a;
+    --apartada: #ffd27f;
+    --vendida: #c9c9c9;
+    --novendible: #5b5b5b;
+    --tinta: #1c1c1c;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+    color: var(--tinta);
+    background: #fff;
+}
+
+header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e2e2;
+}
+
+header .marca {
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--tinta);
+}
+
+main {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+footer {
+    padding: 1rem;
+    font-size: 0.75rem;
+    color: #6b6b6b;
+    text-align: center;
+}
+
+h1 {
+    font-size: 1.4rem;
+    margin: 0.25rem 0;
+}
+
+h2 {
+    font-size: 1rem;
+    text-transform: capitalize;
+    margin: 1.25rem 0 0.5rem;
+    border-bottom: 1px solid #e2e2e2;
+    padding-bottom: 0.25rem;
+}
+
+.semana {
+    color: #5b5b5b;
+    margin-top: 0;
+    text-transform: capitalize;
+}
+
+.vacio {
+    color: #5b5b5b;
+}
+
+.funciones {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.funciones li + li {
+    margin-top: 0.5rem;
+}
+
+.funciones a {
+    display: grid;
+    grid-template-columns: 3.5rem 1fr;
+    gap: 0.25rem 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e2e2e2;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.funciones .hora {
+    font-weight: 700;
+    grid-row: span 2;
+}
+
+.funciones .titulo {
+    font-weight: 600;
+}
+
+.funciones .detalle {
+    font-size: 0.85rem;
+    color: #5b5b5b;
+}
+
+.pantalla {
+    margin: 1rem 0 0.75rem;
+    padding: 0.35rem;
+    text-align: center;
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    background: #ececec;
+    border-radius: 0.25rem;
+}
+
+.mapa {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.fila {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.fila .letra {
+    width: 16px;
+    font-size: 0.7rem;
+    color: #5b5b5b;
+    text-align: center;
+}
+
+.butaca {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--libre-borde);
+    background: var(--libre);
+    font-size: 0.6rem;
+    line-height: 20px;
+    text-align: center;
+    color: #3a3a3a;
+}
+
+.butaca.apartada {
+    background: var(--apartada);
+    border-color: #c9922c;
+}
+
+.butaca.vendida {
+    background: var(--vendida);
+    border-color: #8f8f8f;
+    color: #6b6b6b;
+}
+
+.butaca.novendible {
+    background: var(--novendible);
+    border-color: #3a3a3a;
+    color: transparent;
+    cursor: not-allowed;
+}
+
+.leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+    font-size: 0.8rem;
+}
+
+.leyenda li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.leyenda .butaca {
+    width: 16px;
+    height: 16px;
+}
+
+.aviso {
+    font-size: 0.75rem;
+    color: #5b5b5b;
+}
+
+/* En la pantalla de un teléfono las 12 butacas de la fila tienen que caber enteras, sin
+   desplazamiento horizontal y sin ampliar (RNF-6). */
+@media (max-width: 430px) {
+    main {
+        padding: 0.75rem 0.4rem;
+    }
+
+    .fila {
+        gap: 2px;
+    }
+
+    .fila .letra {
+        width: 14px;
+    }
+
+    .butaca {
+        width: 20px;
+        height: 20px;
+        line-height: 18px;
+        font-size: 0.55rem;
+    }
+}

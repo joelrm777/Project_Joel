@@ -1,0 +1,52 @@
+@page "/funcion/{funcionId:int}"
+@using System.Globalization
+@using Cine.Nucleo.Dominio
+@model FuncionModel
+@{
+    var cultura = new CultureInfo("es-CR");
+    ViewData["Title"] = Model.Mapa is null ? "Función no encontrada" : Model.Mapa.Titulo;
+}
+
+@if (Model.Mapa is null)
+{
+    <h1>Función no encontrada</h1>
+    <p class="vacio">Esa función no existe en la cartelera. <a asp-page="/Index">Volver a la cartelera</a>.</p>
+    return;
+}
+
+<h1>@Model.Mapa.Titulo</h1>
+<p class="semana">
+    @Model.Mapa.SalaNombre &middot;
+    @Model.Mapa.InicioLocal.ToString("dddd d 'de' MMMM 'a las' HH:mm", cultura) &middot;
+    @(Model.Mapa.ClasificacionEdad == 0 ? "todo público" : $"{Model.Mapa.ClasificacionEdad} años")
+</p>
+
+<p class="pantalla">PANTALLA</p>
+
+<div id="mapa" class="mapa" data-funcion-id="@Model.Mapa.FuncionId">
+    @foreach (var fila in Model.Filas)
+    {
+        <div class="fila">
+            <span class="letra">@fila.Key</span>
+            @foreach (var butaca in fila.OrderBy(b => b.Numero))
+            {
+                <span class="butaca @butaca.Estado.ToString().ToLowerInvariant()"
+                      data-butaca="@butaca.Fila@butaca.Numero"
+                      title="@butaca.Fila@butaca.Numero — @butaca.Estado">@butaca.Numero</span>
+            }
+        </div>
+    }
+</div>
+
+<ul class="leyenda">
+    <li><span class="butaca libre"></span> libre</li>
+    <li><span class="butaca apartada"></span> apartada</li>
+    <li><span class="butaca vendida"></span> vendida</li>
+    <li><span class="butaca novendible"></span> no vendible</li>
+</ul>
+
+<p class="aviso" id="aviso">El mapa se actualiza solo cada 5 segundos.</p>
+
+@section Scripts {
+    <script src="~/js/mapa.js" asp-append-version="true"></script>
+}

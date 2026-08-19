@@ -1,0 +1,25 @@
+@{
+    var version = System.Reflection.Assembly.GetAssembly(typeof(Cine.Nucleo.Servicios.ServicioCartelera))!
+        .GetName().Version?.ToString() ?? "desconocida";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cine Variedades</title>
+    <link rel="stylesheet" href="~/css/cine.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <a class="marca" asp-page="/Index">Cine Variedades</a>
+    </header>
+    <main>
+        @RenderBody()
+    </main>
+    <footer>
+        <span>Cine Variedades &middot; núcleo @version</span>
+    </footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

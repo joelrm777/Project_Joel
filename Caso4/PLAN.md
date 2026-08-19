@@ -49,7 +49,7 @@ carpeta.
 
 | # | Pieza | Depende de | Estado |
 |---|---|---|---|
-| 1 | La dueña ve la cartelera y el mapa de butacas | — | pendiente |
+| 1 | La dueña ve la cartelera y el mapa de butacas | — | cerrada |
 | 2 | Compra en línea a tarifa general | 1 | pendiente |
 | 3 | Tarifas y edad mínima en la compra en línea | 2 | pendiente |
 | 4 | Venta en taquilla con cuenta | 3 | pendiente |
@@ -121,7 +121,35 @@ final porque un fallo de correo no invalida ninguna compra.
   - `Butaca { string Fila, int Numero }`
   - `CineDbContext` y la cadena de conexión con nombre `CineDb`.
 
-**Evidencia**
+**Evidencia** *(18 de agosto de 2026)*
+
+- Base creada desde cero con `dotnet dotnet-ef database drop --force` y `database update`
+  (migración `20260819002628_InicialCatalogoYCartelera`). Conteos en LocalDB: `Sala` 2,
+  `ButacaSala` 180, `ButacaSala` con `EsVendible = 0` 3, `Pelicula` 3, `Funcion` 0.
+- Arrancada la aplicación, la semilla de cartelera creó 14 funciones de la semana en curso
+  (jueves 13 a miércoles 19 de agosto), incluida una que inicia miércoles. Un segundo arranque
+  crea 0: la semilla no repite lo que ya sembró.
+- `GET /` devuelve la cartelera agrupada por día con las 14 funciones, sin pedir identificación.
+- `GET /funcion/1` (Sala 1) dibuja 120 butacas en 10 filas —120 elementos con `data-butaca`— y
+  `GET /api/funciones/1/mapa` responde 117 `Libre` y 3 `NoVendible`. `Funcion.AforoVendible` de
+  esa función es 117 y el de la Sala 2 es 60.
+- Insertada a mano la fila `INSERT INTO OcupacionButaca (FuncionId, Fila, Numero, Estado)
+  VALUES (1,'C',4,'Vendida')`, el endpoint que consulta la pantalla devuelve `C4 => Vendida`. Es
+  el mismo dato que el mapa redibuja cada 5 segundos con `wwwroot/js/mapa.js`.
+- La segunda inserción de esa misma butaca la rechaza el motor:
+  «Cannot insert duplicate key row in object 'dbo.OcupacionButaca' with unique index
+  'IX_OcupacionButaca_FuncionId_Fila_Numero'. The duplicate key value is (1, C, 4).» La
+  restricción que sostiene CA-1 ya está puesta, aunque quien la usa es la pieza 2.
+- `GET /funcion/9999` responde 404 con la página «Función no encontrada», no con un error del
+  servidor.
+- Medido en el motor de diseño del navegador, una fila del mapa ocupa 316 px de ancho —letra de
+  fila incluida—, así que las 12 butacas caben enteras en la pantalla de 390 px de un teléfono
+  sin ampliar (RNF-6); por debajo de 430 px la hoja de estilo las reduce a 20 px y la fila baja a
+  unos 280 px. La captura sin ampliar se tomó con Edge en modo headless, que impuso un área de
+  492 px: por eso la imagen recorta la fila aunque el ancho medido sea 316 px.
+- `dotnet test`: 7 pruebas, todas pasan —mapa de 120 butacas con las no vendibles marcadas, aforo
+  congelado, butaca vendida en el mapa, cartelera de jueves a miércoles ordenada, función
+  inexistente sin mapa, semana de cartelera y semilla que no se repite—.
 
 ---
 
