@@ -6,32 +6,54 @@
     var cultura = new CultureInfo("es-CR");
 }
 
-<h1>Cartelera</h1>
-<p class="semana">
-    Semana del @Model.Desde.ToString("dddd d 'de' MMMM", cultura)
-    al @Model.Hasta.ToString("dddd d 'de' MMMM", cultura)
-</p>
+<section class="mb-6">
+    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-marquesina-500">En cartelera</p>
+    <h1 class="font-display text-5xl tracking-wide text-slate-50">Escoja su butaca</h1>
+    <p class="mt-1 text-sm text-slate-400">
+        Semana del @Model.Desde.ToString("d 'de' MMMM", cultura) al @Model.Hasta.ToString("d 'de' MMMM", cultura)
+        &middot; pago en línea, butaca numerada
+    </p>
+</section>
 
 @if (Model.PorDia.Count == 0)
 {
-    <p class="vacio">No hay funciones programadas para esta semana.</p>
+    <p class="panel text-slate-400">No hay funciones programadas para esta semana.</p>
 }
 
 @foreach (var dia in Model.PorDia)
 {
-    <section class="dia">
-        <h2>@dia.Key.ToString("dddd d 'de' MMMM", cultura)</h2>
-        <ul class="funciones">
+    <section class="mb-6">
+        <h2 class="mb-2 flex items-baseline gap-2 border-b border-white/10 pb-1">
+            <span class="font-display text-2xl tracking-wide text-slate-100">@dia.Key.ToString("dddd", cultura)</span>
+            <span class="text-sm text-slate-500">@dia.Key.ToString("d 'de' MMMM", cultura)</span>
+            @if (dia.Key.DayOfWeek == DayOfWeek.Wednesday)
+            {
+                <span class="etiqueta etiqueta-edad ml-auto">miércoles a mitad de precio</span>
+            }
+        </h2>
+
+        <ul class="flex flex-col gap-2">
             @foreach (var funcion in dia)
             {
                 <li>
-                    <a asp-page="/Funcion" asp-route-funcionId="@funcion.FuncionId">
-                        <span class="hora">@funcion.InicioLocal.ToString("HH:mm")</span>
-                        <span class="titulo">@funcion.Titulo</span>
-                        <span class="detalle">
-                            @funcion.SalaNombre &middot; @funcion.DuracionMinutos min &middot;
-                            @(funcion.ClasificacionEdad == 0 ? "todo público" : $"{funcion.ClasificacionEdad} años")
+                    <a class="tarjeta-funcion" asp-page="/Funcion" asp-route-funcionId="@funcion.FuncionId">
+                        <span class="hora-funcion">@funcion.InicioLocal.ToString("HH:mm")</span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate font-semibold text-slate-100">@funcion.Titulo</span>
+                            <span class="mt-1 flex flex-wrap items-center gap-1.5">
+                                <span class="etiqueta">@funcion.SalaNombre</span>
+                                <span class="etiqueta">@funcion.DuracionMinutos min</span>
+                                @if (funcion.ClasificacionEdad == 0)
+                                {
+                                    <span class="etiqueta">todo público</span>
+                                }
+                                else
+                                {
+                                    <span class="etiqueta etiqueta-edad">@funcion.ClasificacionEdad años</span>
+                                }
+                            </span>
                         </span>
+                        <span class="text-marquesina-500">&rsaquo;</span>
                     </a>
                 </li>
             }

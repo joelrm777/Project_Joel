@@ -1,6 +1,5 @@
 @page "/funcion/{funcionId:int}"
 @using System.Globalization
-@using Cine.Nucleo.Dominio
 @model FuncionModel
 @{
     var cultura = new CultureInfo("es-CR");
@@ -9,83 +8,110 @@
 
 @if (Model.Mapa is null)
 {
-    <h1>Función no encontrada</h1>
-    <p class="vacio">Esa función no existe en la cartelera. <a asp-page="/Index">Volver a la cartelera</a>.</p>
+    <div class="panel text-center">
+        <h1 class="font-display text-4xl tracking-wide text-slate-100">Función no encontrada</h1>
+        <p class="mt-2 text-slate-400">Esa función no existe en la cartelera.</p>
+        <a asp-page="/Index" class="mt-4 inline-block text-marquesina-400 underline underline-offset-4">Volver a la cartelera</a>
+    </div>
     return;
 }
 
-<h1>@Model.Mapa.Titulo</h1>
-<p class="semana">
-    @Model.Mapa.SalaNombre &middot;
-    @Model.Mapa.InicioLocal.ToString("dddd d 'de' MMMM 'a las' HH:mm", cultura) &middot;
-    @(Model.Mapa.ClasificacionEdad == 0 ? "todo público" : $"{Model.Mapa.ClasificacionEdad} años")
-</p>
+<a asp-page="/Index" class="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-marquesina-400">
+    &lsaquo; Cartelera
+</a>
 
-<p class="pantalla">PANTALLA</p>
+<section class="mb-6">
+    <h1 class="font-display text-4xl leading-tight tracking-wide text-slate-50">@Model.Mapa.Titulo</h1>
+    <p class="mt-1 flex flex-wrap items-center gap-1.5">
+        <span class="etiqueta">@Model.Mapa.SalaNombre</span>
+        <span class="etiqueta">@Model.Mapa.InicioLocal.ToString("dddd d 'de' MMMM, HH:mm", cultura)</span>
+        @if (Model.Mapa.ClasificacionEdad == 0)
+        {
+            <span class="etiqueta">todo público</span>
+        }
+        else
+        {
+            <span class="etiqueta etiqueta-edad">@Model.Mapa.ClasificacionEdad años</span>
+        }
+    </p>
+</section>
 
-<div id="mapa" class="mapa" data-funcion-id="@Model.Mapa.FuncionId">
-    @foreach (var fila in Model.Filas)
-    {
-        <div class="fila">
-            <span class="letra">@fila.Key</span>
-            @foreach (var butaca in fila.OrderBy(b => b.Numero))
-            {
-                <span class="butaca @butaca.Estado.ToString().ToLowerInvariant()"
-                      data-butaca="@butaca.Fila@butaca.Numero"
-                      title="@butaca.Fila@butaca.Numero — @butaca.Estado">@butaca.Numero</span>
-            }
-        </div>
-    }
-</div>
+<section class="panel">
+    <p class="mb-2 text-center text-[0.65rem] uppercase tracking-[0.4em] text-slate-500">Pantalla</p>
+    <div class="pantalla-sala"></div>
 
-<ul class="leyenda">
-    <li><span class="butaca libre"></span> libre</li>
-    <li><span class="butaca mia"></span> suya</li>
-    <li><span class="butaca apartada"></span> apartada</li>
-    <li><span class="butaca vendida"></span> vendida</li>
-    <li><span class="butaca novendible"></span> no vendible</li>
-</ul>
+    <div id="mapa" class="mapa" data-funcion-id="@Model.Mapa.FuncionId">
+        @foreach (var fila in Model.Filas)
+        {
+            <div class="fila">
+                <span class="letra">@fila.Key</span>
+                @foreach (var butaca in fila.OrderBy(b => b.Numero))
+                {
+                    <span class="butaca @butaca.Estado.ToString().ToLowerInvariant()"
+                          data-butaca="@butaca.Fila@butaca.Numero"
+                          title="@butaca.Fila@butaca.Numero — @butaca.Estado">@butaca.Numero</span>
+                }
+            </div>
+        }
+    </div>
 
-<p class="aviso" id="aviso">El mapa se actualiza solo cada 5 segundos.</p>
+    <ul class="leyenda">
+        <li><span class="butaca libre"></span> libre</li>
+        <li><span class="butaca mia"></span> suya</li>
+        <li><span class="butaca apartada"></span> apartada</li>
+        <li><span class="butaca vendida"></span> vendida</li>
+        <li><span class="butaca novendible"></span> no vendible</li>
+    </ul>
 
-<section class="compra" id="compra"
+    <p class="mt-3 text-center text-[0.7rem] text-slate-500" id="aviso">El mapa se actualiza solo cada 5 segundos.</p>
+</section>
+
+<section class="panel mt-4"
+         id="compra"
          data-tarifas="@System.Text.Json.JsonSerializer.Serialize(Model.Tarifas.Select(t => new { tarifa = t.Tarifa.ToString(), nombre = FuncionModel.NombreDeTarifa(t.Tarifa), monto = t.Monto }))"
          data-exige-edad="@(Model.ExigeDeclaracionDeEdad ? "si" : "no")"
          data-edad-minima="@Model.Mapa.ClasificacionEdad">
-    <p id="seleccion">Toque las butacas que quiere. Cada una queda apartada 10 minutos.</p>
-    <p id="plazo" hidden></p>
+
+    <div class="flex items-start justify-between gap-3">
+        <p class="text-sm text-slate-300" id="seleccion">Toque las butacas que quiere. Cada una queda apartada 10 minutos.</p>
+        <p class="shrink-0 rounded-lg border border-marquesina-500/40 bg-marquesina-500/10 px-2 py-1 font-mono text-sm text-marquesina-400"
+           id="plazo" hidden></p>
+    </div>
 
     <ul class="tarifas" id="tarifas"></ul>
 
-    <p class="tarifasDisponibles">
+    <p class="mt-3 text-xs text-slate-500">
         @if (Model.Mapa.InicioLocal.DayOfWeek == DayOfWeek.Wednesday)
         {
             <text>Función de miércoles: toda butaca a mitad de precio, sin tarifa estudiante.</text>
         }
         else
         {
-            <text>Tarifas de esta función: @string.Join(", ", Model.Tarifas.Select(t => $"{FuncionModel.NombreDeTarifa(t.Tarifa)} ₡{t.Monto:N2}")).</text>
+            <text>Tarifas de esta función: @string.Join(" · ", Model.Tarifas.Select(t => $"{FuncionModel.NombreDeTarifa(t.Tarifa)} ₡{t.Monto:N2}")).</text>
         }
     </p>
 
     @if (Model.ExigeDeclaracionDeEdad)
     {
-        <label class="edad">
-            <input type="checkbox" id="edad" />
-            Declaro que cumplo la edad mínima de @Model.Mapa.ClasificacionEdad años.
+        <label class="mt-3 flex items-start gap-2 rounded-xl border border-marquesina-500/30 bg-marquesina-500/5 p-3 text-sm text-slate-200">
+            <input type="checkbox" id="edad" class="mt-0.5 h-4 w-4 accent-marquesina-500" />
+            <span>Declaro que cumplo la edad mínima de <strong class="text-marquesina-400">@Model.Mapa.ClasificacionEdad años</strong>.</span>
         </label>
     }
 
-    <label for="correo">Correo (opcional, para recibir el código)</label>
-    <input type="email" id="correo" name="correo" autocomplete="email" placeholder="nombre@ejemplo.cr" />
-    <button type="button" id="pagar" disabled>Pagar</button>
+    <label for="correo" class="mt-3 block text-xs text-slate-400">Correo (opcional, para recibir el código)</label>
+    <input type="email" id="correo" name="correo" autocomplete="email" class="campo mt-1" placeholder="nombre@ejemplo.cr" />
+
+    <button type="button" id="pagar" class="boton-pagar" disabled>Pagar</button>
+
     <p class="error" id="error" hidden></p>
 </section>
 
 <section class="confirmacion" id="confirmacion" hidden>
-    <h2>Compra confirmada</h2>
-    <p>Su código es <strong id="codigo"></strong>. Preséntelo en la puerta.</p>
-    <p id="detalleCompra"></p>
+    <p class="text-sm uppercase tracking-[0.25em] text-elegida-400">Compra confirmada</p>
+    <strong class="codigo-confirmacion" id="codigo"></strong>
+    <p class="mt-2 text-sm text-slate-300" id="detalleCompra"></p>
+    <p class="mt-1 text-xs text-slate-500">Preséntelo en la puerta. Su butaca ya está vendida a su nombre.</p>
 </section>
 
 @section Scripts {

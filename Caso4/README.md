@@ -74,6 +74,24 @@ La cadena de conexión está en `src/Cine.Web.Publica/appsettings.json`, con el 
 Las herramientas de migración usan la variable de entorno `CINE_CADENA_CONEXION` si está puesta, y
 si no, la misma base de desarrollo.
 
+## Cómo se rehace la hoja de estilo
+
+La pantalla usa **Tailwind CSS 4**. El archivo que sirve la aplicación,
+`src/Cine.Web.Publica/wwwroot/css/cine.css`, está generado y versionado, así que `dotnet run`
+funciona sin tocar npm. Para cambiarlo se edita `src/Cine.Web.Publica/Estilos/cine.src.css` y se
+vuelve a generar:
+
+```bash
+cd src/Cine.Web.Publica
+npm install          # una sola vez
+npm run build:css    # genera wwwroot/css/cine.css
+npm run watch:css    # o lo regenera solo mientras se trabaja
+```
+
+Las clases que JavaScript enciende y apaga en el mapa —`libre`, `apartada`, `vendida`,
+`novendible`, `mia`— están declaradas como componentes en `cine.src.css`, no sueltas en el marcado:
+así el archivo `mapa.js` sigue tratando con nombres del negocio.
+
 ## Cómo se corren las pruebas
 
 ```bash
@@ -107,6 +125,8 @@ Caso4/
 | xunit.runner.visualstudio 3.1.4 | Ejecución de las pruebas desde `dotnet test` | https://github.com/xunit/visualstudio.xunit |
 | Microsoft.NET.Test.Sdk 17.14.1 | Infraestructura de ejecución de pruebas | https://github.com/microsoft/vstest |
 | coverlet.collector 6.0.4 | Cobertura de pruebas | https://github.com/coverlet-coverage/coverlet |
+| tailwindcss 4.3.3 y @tailwindcss/cli 4.3.3 | Hoja de estilo de la aplicación pública | https://github.com/tailwindlabs/tailwindcss |
+| Bebas Neue (Google Fonts) | Tipografía de títulos, con alternativas del sistema si no carga | https://github.com/dharmatype/Bebas-Neue |
 
 Motor de base de datos: **SQL Server LocalDB** en desarrollo y **SQL Server Express** en
 despliegue. Es producto de Microsoft, sin repositorio público de código; su documentación oficial
@@ -114,4 +134,13 @@ está en https://learn.microsoft.com/sql/database-engine/configure-windows/sql-s
 
 Qué se rompe si alguna desaparece: EF Core y su proveedor de SQL Server son los únicos que están
 atados al código de persistencia —cambiarlos significa reescribir `Cine.Nucleo/Datos`—; el resto
-son herramientas de compilación y de pruebas, reemplazables sin tocar el dominio.
+son herramientas de compilación y de pruebas, reemplazables sin tocar el dominio. Tailwind es
+herramienta de construcción, no de ejecución: la hoja generada ya está versionada, así que si
+desapareciera la aplicación seguiría corriendo igual y solo costaría cambiar los estilos. La
+tipografía Bebas Neue se pide a Google Fonts; si no carga, los títulos caen en la alternativa del
+sistema y no se pierde nada más que el estilo de la letra.
+
+El aspecto visual y la biblioteca de interfaz eran una decisión que `DISENO.md` dejó abierta para
+quien implemente, con RNF-6 como única exigencia: el mapa se lee en un teléfono sin ampliar. Con
+este diseño una fila mide 316 px dentro de una pantalla de 390 px, y por debajo de 420 px las
+butacas bajan a 18 px.

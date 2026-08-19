@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/* Las clases que el mapa enciende y apaga desde JavaScript viven en las páginas y en mapa.js. */
+@source "../Pages";
+@source "../wwwroot/js";
+
+@theme {
+    /* Sala a oscuras y luz de proyector: el cine antes de que empiece la película. */
+    --color-sala-950: #07070d;
+    --color-sala-900: #0d0d18;
+    --color-sala-800: #16162a;
+    --color-sala-700: #23233f;
+    --color-sala-600: #34345c;
+
+    /* El ámbar de la marquesina. */
+    --color-marquesina-400: #ffc94d;
+    --color-marquesina-500: #f5a524;
+    --color-marquesina-600: #d97e0b;
+
+    /* El verde de lo que ya es suyo. */
+    --color-elegida-400: #4ade80;
+    --color-elegida-500: #22c55e;
+    --color-elegida-600: #16a34a;
+
+    --font-display: "Bebas Neue", "Haettenschweiler", "Arial Narrow", system-ui, sans-serif;
+
+    --animate-latido: latido 2s ease-in-out infinite;
+    --animate-aparecer: aparecer 0.35s ease-out both;
+}
+
+@keyframes latido {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+}
+
+@keyframes aparecer {
+    from { opacity: 0; transform: translateY(0.5rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@layer base {
+    body {
+        @apply min-h-screen bg-sala-950 text-slate-100 antialiased;
+        background-image:
+            radial-gradient(60rem 30rem at 50% -10rem, color-mix(in oklab, var(--color-marquesina-500) 18%, transparent), transparent),
+            radial-gradient(40rem 24rem at 100% 100%, color-mix(in oklab, var(--color-sala-600) 45%, transparent), transparent);
+        background-attachment: fixed;
+    }
+}
+
+@layer components {
+    /* ---- Estructura ---- */
+
+    .panel {
+        @apply rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl shadow-black/40 backdrop-blur-sm;
+    }
+
+    .etiqueta {
+        @apply inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-slate-300;
+    }
+
+    .etiqueta-edad {
+        @apply border-marquesina-500/40 bg-marquesina-500/15 text-marquesina-400;
+    }
+
+    /* ---- Cartelera ---- */
+
+    .tarjeta-funcion {
+        @apply flex items-center gap-3 rounded-xl border border-white/10 bg-gradient-to-r from-white/8 to-white/[0.03]
+               p-3 transition duration-200 hover:-translate-y-0.5 hover:border-marquesina-500/50
+               hover:shadow-lg hover:shadow-marquesina-500/10 focus-visible:outline focus-visible:outline-2
+               focus-visible:outline-marquesina-400;
+    }
+
+    .hora-funcion {
+        @apply grid h-12 w-16 shrink-0 place-items-center rounded-lg border border-marquesina-500/30
+               bg-marquesina-500/10 font-display text-xl tracking-wide text-marquesina-400;
+    }
+
+    /* ---- Mapa de butacas ---- */
+
+    .pantalla-sala {
+        @apply mx-auto mb-6 h-2 w-11/12 max-w-md rounded-[100%] bg-gradient-to-b from-marquesina-400/80 to-transparent;
+        box-shadow: 0 1.5rem 4rem 0.5rem color-mix(in oklab, var(--color-marquesina-400) 22%, transparent);
+    }
+
+    .mapa {
+        @apply flex flex-col items-center gap-1;
+    }
+
+    .fila {
+        @apply flex items-center gap-[3px];
+    }
+
+    .fila .letra {
+        @apply w-4 text-center text-[0.6rem] font-semibold text-slate-500;
+    }
+
+    /* 12 butacas de 22 px más su separación caben en la pantalla de un teléfono (RNF-6). */
+    .butaca {
+        @apply grid h-[22px] w-[22px] place-items-center rounded-[5px] border text-[0.6rem] font-semibold
+               transition duration-150 select-none;
+    }
+
+    .butaca.libre {
+        @apply cursor-pointer border-slate-500/60 bg-slate-700/40 text-slate-300
+               hover:scale-110 hover:border-marquesina-400 hover:bg-marquesina-500/25 hover:text-marquesina-400;
+    }
+
+    .butaca.apartada {
+        @apply border-marquesina-500/70 bg-marquesina-500/30 text-marquesina-400 animate-latido;
+    }
+
+    .butaca.vendida {
+        @apply border-white/10 bg-white/5 text-slate-600;
+    }
+
+    .butaca.novendible {
+        @apply cursor-not-allowed border-transparent bg-slate-800/60 text-transparent;
+    }
+
+    .butaca.mia {
+        @apply scale-110 border-elegida-400 bg-elegida-500 text-sala-950 shadow-lg shadow-elegida-500/40;
+    }
+
+    .leyenda {
+        @apply mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-slate-400;
+    }
+
+    .leyenda li {
+        @apply flex items-center gap-1.5;
+    }
+
+    .leyenda .butaca {
+        @apply h-4 w-4 cursor-default hover:scale-100;
+    }
+
+    /* ---- Compra ---- */
+
+    .tarifas {
+        @apply mt-3 flex flex-col gap-2;
+    }
+
+    .tarifas li {
+        @apply flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-sala-900/70 px-3 py-2 animate-aparecer;
+    }
+
+    .tarifas li > span {
+        @apply grid h-7 w-9 place-items-center rounded-md bg-elegida-500/20 text-sm font-bold text-elegida-400;
+    }
+
+    .tarifas select {
+        @apply rounded-lg border border-white/15 bg-sala-800 px-2 py-1.5 text-sm text-slate-100
+               focus:border-marquesina-400 focus:outline-none;
+    }
+
+    .campo {
+        @apply w-full rounded-xl border border-white/15 bg-sala-900/80 px-3 py-2.5 text-slate-100
+               placeholder:text-slate-500 focus:border-marquesina-400 focus:outline-none;
+    }
+
+    .boton-pagar {
+        @apply mt-3 w-full rounded-xl bg-gradient-to-r from-marquesina-500 to-marquesina-600 px-4 py-3
+               font-display text-lg tracking-wider text-sala-950 shadow-lg shadow-marquesina-500/25
+               transition hover:brightness-110 active:scale-[0.99]
+               disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700
+               disabled:text-slate-500 disabled:shadow-none;
+    }
+
+    .error {
+        @apply mt-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300;
+    }
+
+    .confirmacion {
+        @apply mt-4 rounded-2xl border border-elegida-500/40 bg-elegida-500/10 p-5 text-center animate-aparecer;
+    }
+
+    .codigo-confirmacion {
+        @apply block font-display text-4xl tracking-[0.2em] text-elegida-400;
+    }
+}
+
+/* En la pantalla de un teléfono las 12 butacas de la fila tienen que caber enteras, sin
+   desplazamiento horizontal y sin ampliar (RNF-6). */
+@media (max-width: 420px) {
+    .butaca {
+        height: 18px;
+        width: 18px;
+        font-size: 0.5rem;
+    }
+
+    .fila {
+        gap: 2px;
+    }
+
+    .fila .letra {
+        width: 0.75rem;
+    }
+}

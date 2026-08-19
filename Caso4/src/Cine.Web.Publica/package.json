@@ -1,0 +1,19 @@
+{
+  "name": "cine-web-publica",
+  "version": "1.0.0",
+  "description": "Hoja de estilo de la aplicacion publica del Cine Variedades, construida con Tailwind CSS.",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./Estilos/cine.src.css -o ./wwwroot/css/cine.css --minify",
+    "watch:css": "tailwindcss -i ./Estilos/cine.src.css -o ./wwwroot/css/cine.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  },
+  "private": true
+}
