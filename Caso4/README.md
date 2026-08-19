@@ -98,7 +98,15 @@ así el archivo `mapa.js` sigue tratando con nombres del negocio.
 dotnet test
 ```
 
-Las pruebas crean y borran su propia base en LocalDB, con nombre `CinePruebas_<identificador>`.
+Son dos conjuntos:
+
+- `pruebas/Cine.Nucleo.Pruebas` — las reglas del negocio contra LocalDB. Cada prueba crea y borra
+  su propia base, con nombre `CinePruebas_<identificador>`.
+- `pruebas/Cine.Web.Publica.Pruebas` — lo que un navegador recibe al abrir la aplicación. Pide las
+  páginas y sus archivos con las cabeceras de un navegador de verdad —incluida la compresión— y
+  falla si llegan vacíos. Nació de un defecto real: la hoja de estilo y el JavaScript se servían
+  con cuerpo de cero bytes a todo cliente que pidiera gzip, y la pantalla aparecía sin diseño y
+  sin poder elegir butacas.
 
 ## Estructura
 
@@ -106,7 +114,8 @@ Las pruebas crean y borran su propia base en LocalDB, con nombre `CinePruebas_<i
 Caso4/
   src/Cine.Nucleo/          biblioteca de dominio: entidades, reglas y acceso a datos
   src/Cine.Web.Publica/     aplicación del comprador: cartelera, mapa de butacas y compra
-  pruebas/Cine.Nucleo.Pruebas/
+  pruebas/Cine.Nucleo.Pruebas/        las reglas del negocio
+  pruebas/Cine.Web.Publica.Pruebas/   lo que el navegador recibe
   PLAN.md                   el plan de construcción, con la evidencia de cada pieza cerrada
 ```
 
@@ -124,6 +133,7 @@ Caso4/
 | xunit 2.9.3 | Marco de pruebas | https://github.com/xunit/xunit |
 | xunit.runner.visualstudio 3.1.4 | Ejecución de las pruebas desde `dotnet test` | https://github.com/xunit/visualstudio.xunit |
 | Microsoft.NET.Test.Sdk 17.14.1 | Infraestructura de ejecución de pruebas | https://github.com/microsoft/vstest |
+| Microsoft.AspNetCore.Mvc.Testing 10.0.11 | Levantar la aplicación dentro de las pruebas de pantalla | https://github.com/dotnet/aspnetcore |
 | coverlet.collector 6.0.4 | Cobertura de pruebas | https://github.com/coverlet-coverage/coverlet |
 | tailwindcss 4.3.3 y @tailwindcss/cli 4.3.3 | Hoja de estilo de la aplicación pública | https://github.com/tailwindlabs/tailwindcss |
 | Bebas Neue (Google Fonts) | Tipografía de títulos, con alternativas del sistema si no carga | https://github.com/dharmatype/Bebas-Neue |

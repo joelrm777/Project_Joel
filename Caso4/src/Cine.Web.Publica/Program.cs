@@ -41,8 +41,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.MapStaticAssets();
-app.MapRazorPages().WithStaticAssets();
+// Archivos estáticos servidos directamente. No se usa MapStaticAssets: sirve una variante
+// comprimida que la compilación no siempre genera, y entonces la hoja de estilo llega vacía a
+// cualquier navegador que pida gzip, que son todos.
+app.UseStaticFiles();
+app.MapRazorPages();
 
 // Lo que consulta el mapa cada 5 segundos para redibujarse sin recargar la página.
 app.MapGet("/api/funciones/{funcionId:int}/mapa",

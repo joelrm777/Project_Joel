@@ -33,6 +33,16 @@ public class PruebasDeTarifas
     private static IReadOnlyList<LineaTarifa> Lineas(Tarifa tarifa, params string[] butacas) =>
         [.. butacas.Select(b => new LineaTarifa(b[..1], int.Parse(b[1..]), tarifa))];
 
+    /// <summary>
+    /// Una hora futura que no caiga en miércoles: ahí la tarifa general no existe (RN-12), y una
+    /// prueba que hable de tarifa general fallaría según la hora a la que se corra.
+    /// </summary>
+    private static DateTime HorarioFuturoQueNoEsMiercoles(DateTime ahora)
+    {
+        var inicio = ahora.AddHours(3);
+        return inicio.DayOfWeek == DayOfWeek.Wednesday ? inicio.AddDays(1) : inicio;
+    }
+
     private static async Task<BaseDePruebas> PrepararAsync()
     {
         var baseDePruebas = new BaseDePruebas();
@@ -156,7 +166,7 @@ public class PruebasDeTarifas
         using var baseDePruebas = await PrepararAsync();
         var ahora = await baseDePruebas.AhoraDelMotorAsync();
         var funcionId = await baseDePruebas.CrearFuncionAsync(
-            PeliculaDeDoceAnios, SemillaCatalogo.SalaDosId, ahora.AddHours(3));
+            PeliculaDeDoceAnios, SemillaCatalogo.SalaDosId, HorarioFuturoQueNoEsMiercoles(ahora));
 
         using var datos = baseDePruebas.Abrir();
         var venta = Venta(datos);
@@ -174,7 +184,7 @@ public class PruebasDeTarifas
         var declarando = await venta.PagarAsync(apartado.ApartadoId!.Value, Lineas(Tarifa.General, "A5"),
             Canal.EnLinea, null, null, true, "clave-con-edad");
 
-        Assert.True(declarando.Exitoso);
+        Assert.True(declarando.Exitoso, $"rechazo: {declarando.Motivo}");
     }
 
     [Fact]
@@ -183,7 +193,7 @@ public class PruebasDeTarifas
         using var baseDePruebas = await PrepararAsync();
         var ahora = await baseDePruebas.AhoraDelMotorAsync();
         var funcionId = await baseDePruebas.CrearFuncionAsync(
-            PeliculaSinEdadMinima, SemillaCatalogo.SalaDosId, ahora.AddHours(3));
+            PeliculaSinEdadMinima, SemillaCatalogo.SalaDosId, HorarioFuturoQueNoEsMiercoles(ahora));
 
         using var datos = baseDePruebas.Abrir();
         var venta = Venta(datos);
@@ -192,7 +202,7 @@ public class PruebasDeTarifas
         var compra = await venta.PagarAsync(apartado.ApartadoId!.Value, Lineas(Tarifa.General, "A6"),
             Canal.EnLinea, null, null, false, "clave-sin-restriccion");
 
-        Assert.True(compra.Exitoso);
+        Assert.True(compra.Exitoso, $"rechazo: {compra.Motivo}");
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/pruebas/">
     <Project Path="pruebas/Cine.Nucleo.Pruebas/Cine.Nucleo.Pruebas.csproj" />
+    <Project Path="pruebas/Cine.Web.Publica.Pruebas/Cine.Web.Publica.Pruebas.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Cine.Nucleo/Cine.Nucleo.csproj" />
