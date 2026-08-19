@@ -19,6 +19,7 @@ builder.Services.AddDbContext<CineDbContext>(opciones =>
 
 builder.Services.AddSingleton<IRelojCine, RelojCine>();
 builder.Services.AddScoped<IServicioCartelera, ServicioCartelera>();
+builder.Services.AddScoped<IServicioTarifas, ServicioTarifas>();
 builder.Services.AddScoped<IServicioVenta, ServicioVenta>();
 
 var app = builder.Build();
@@ -74,7 +75,7 @@ app.MapPost("/api/apartados/{apartadoId:int}/pagar",
     async (int apartadoId, PeticionPago peticion, IServicioVenta venta) =>
     {
         var lineas = peticion.Butacas
-            .Select(b => new LineaTarifa(b.Fila, b.Numero, Tarifa.General))
+            .Select(b => new LineaTarifa(b.Fila, b.Numero, b.Tarifa))
             .ToList();
 
         var resultado = await venta.PagarAsync(apartadoId, lineas, Canal.EnLinea,
@@ -87,7 +88,8 @@ app.Run();
 
 public record ButacaPedida(string Fila, int Numero);
 public record PeticionApartar(IReadOnlyList<ButacaPedida> Butacas, int? ApartadoId);
-public record PeticionPago(IReadOnlyList<ButacaPedida> Butacas, string? Correo, bool EdadDeclarada, string ClaveIdempotencia);
+public record ButacaConTarifa(string Fila, int Numero, Tarifa Tarifa);
+public record PeticionPago(IReadOnlyList<ButacaConTarifa> Butacas, string? Correo, bool EdadDeclarada, string ClaveIdempotencia);
 
 /// <summary>Punto de entrada expuesto para las pruebas de la aplicación.</summary>
 public partial class Program;

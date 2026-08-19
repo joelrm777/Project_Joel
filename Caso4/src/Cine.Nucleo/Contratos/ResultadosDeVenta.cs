@@ -26,6 +26,9 @@ public enum MotivoRechazo
 /// <summary>Una butaca con la tarifa que el comprador eligió para ella (RN-15).</summary>
 public record LineaTarifa(string Fila, int Numero, Tarifa Tarifa);
 
+/// <summary>Una tarifa aplicable a una función, con lo que cuesta cada butaca con ella.</summary>
+public record OpcionTarifa(Tarifa Tarifa, decimal Monto);
+
 public record ResultadoOperacion(bool Exitoso, MotivoRechazo? Motivo = null)
 {
     public static ResultadoOperacion Aceptado() => new(true);

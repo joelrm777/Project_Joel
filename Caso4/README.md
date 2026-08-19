@@ -6,9 +6,10 @@ cada pieza cerrada tiene su evidencia anotada ahí.
 
 ## Qué corre hoy
 
-Piezas 1 y 2 cerradas: la cartelera de la semana, el mapa de butacas de una función, y la compra
-en línea a tarifa general —apartar butacas por 10 minutos, soltarlas y pagar simulado con su
-código de confirmación—, todo sin identificarse.
+Piezas 1, 2 y 3 cerradas: la cartelera de la semana, el mapa de butacas de una función, y la
+compra en línea completa —apartar butacas por 10 minutos, soltarlas, elegir la tarifa de cada
+una, declarar la edad mínima cuando la película la exige y pagar simulado con su código de
+confirmación—, todo sin identificarse.
 
 ## Qué hace falta tener instalado
 
@@ -44,18 +45,22 @@ ASPNETCORE_URLS=http://localhost:5080 dotnet run --project src/Cine.Web.Publica 
 - `POST /api/apartados/{id}/pagar` — registra la compra pagada y devuelve el código.
 
 El pago es simulado: el sistema registra que la compra quedó pagada y no toca ningún medio de
-pago. Cada butaca se cobra a la tarifa general provisional de ₡3 500 hasta que la pieza 3 traiga
-las tarifas que fija la administradora.
+pago. Las tarifas sembradas son ₡3 500 la general y ₡2 500 la estudiante; en las funciones que
+inician miércoles toda butaca se cobra a la mitad de la general —₡1 750— y la tarifa estudiante no
+se ofrece. La venta en línea cierra en el instante en que la función inicia. La pantalla para
+fijar tarifas es de la administradora y llega en la pieza 6.
 
 ## Cómo se recrean los datos de prueba
 
 Los datos vienen de dos lugares distintos:
 
-- **Catálogo** (las dos salas con sus 180 butacas, las tres no vendibles y las tres películas):
-  va en la migración, porque es un dato fijo del cine. Se recrea aplicando la migración.
-- **Cartelera** (las 14 funciones de la semana en curso): la siembra la aplicación al arrancar, y
-  no repite lo que ya sembró. Sus fechas dependen del día en que se corre, por eso no va en la
-  migración.
+- **Catálogo** (las dos salas con sus 180 butacas, las tres no vendibles, las tres películas y la
+  primera configuración de tarifas): va en la migración, porque es un dato fijo del cine. Se
+  recrea aplicando la migración.
+- **Cartelera** (28 funciones: las de la semana en curso y las de la siguiente, que son las dos
+  que se pueden programar): la siembra la aplicación al arrancar, y no repite lo que ya sembró.
+  Sus fechas dependen del día en que se corre, por eso no va en la migración. Entre ellas hay
+  funciones de miércoles, para ver la tarifa de ese día, y películas con y sin edad mínima.
 
 Para volver a empezar de cero:
 

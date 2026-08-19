@@ -14,6 +14,7 @@ public class CineDbContext(DbContextOptions<CineDbContext> opciones) : DbContext
     public DbSet<Apartado> Apartados => Set<Apartado>();
     public DbSet<Compra> Compras => Set<Compra>();
     public DbSet<Boleto> Boletos => Set<Boleto>();
+    public DbSet<ConfiguracionTarifa> ConfiguracionesTarifa => Set<ConfiguracionTarifa>();
 
     protected override void OnModelCreating(ModelBuilder modelo)
     {
@@ -105,6 +106,14 @@ public class CineDbContext(DbContextOptions<CineDbContext> opciones) : DbContext
             e.Property(b => b.Tarifa).HasConversion<string>().HasMaxLength(20);
             e.Property(b => b.Monto).HasPrecision(10, 2);
             e.HasOne(b => b.Compra).WithMany(c => c.Boletos).HasForeignKey(b => b.CompraId);
+        });
+
+        modelo.Entity<ConfiguracionTarifa>(e =>
+        {
+            e.ToTable("ConfiguracionTarifa");
+            e.Property(c => c.MontoGeneral).HasPrecision(10, 2);
+            e.Property(c => c.MontoEstudiante).HasPrecision(10, 2);
+            e.HasIndex(c => c.VigenteDesde);
         });
 
         SemillaCatalogo.Aplicar(modelo);

@@ -181,6 +181,48 @@ h2 {
     border-radius: 0.5rem;
 }
 
+.tarifas {
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0;
+}
+
+.tarifas li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #ededed;
+}
+
+.tarifas select {
+    padding: 0.35rem;
+    border: 1px solid #c4c4c4;
+    border-radius: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.tarifasDisponibles {
+    margin: 0.6rem 0;
+    font-size: 0.8rem;
+    color: #5b5b5b;
+}
+
+.edad {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin: 0.6rem 0;
+    font-size: 0.85rem;
+    color: var(--tinta);
+}
+
+.edad input {
+    width: auto;
+    margin-top: 0.15rem;
+}
+
 .compra label {
     display: block;
     font-size: 0.8rem;

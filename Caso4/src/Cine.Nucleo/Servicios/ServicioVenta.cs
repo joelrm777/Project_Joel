@@ -23,19 +23,14 @@ public interface IServicioVenta
                                      bool edadDeclarada, string claveIdempotencia);
 }
 
-public class ServicioVenta(CineDbContext datos, IServicioCartelera cartelera) : IServicioVenta
+public class ServicioVenta(CineDbContext datos, IServicioCartelera cartelera, IServicioTarifas tarifas)
+    : IServicioVenta
 {
     /// <summary>Elegir una butaca libre la deja apartada durante 10 minutos (RN-18).</summary>
     public static readonly TimeSpan DuracionDelApartado = TimeSpan.FromMinutes(10);
 
     /// <summary>Una compra contiene entre 1 y 10 boletos (RN-21).</summary>
     public const int MaximoButacasPorCompra = 10;
-
-    /// <summary>
-    /// La tarifa general mientras la administradora no fija las suyas. La configuración de
-    /// tarifas y el cálculo por fecha llegan en la pieza 3 (RF-7, RF-8).
-    /// </summary>
-    public const decimal TarifaGeneralProvisional = 3500m;
 
     public async Task<ResultadoApartado> ApartarAsync(int funcionId, IReadOnlyList<Butaca> butacas,
                                                       string tokenSesion, int? apartadoId)
@@ -80,6 +75,13 @@ public class ServicioVenta(CineDbContext datos, IServicioCartelera cartelera) : 
         }
 
         var ahora = await RelojDelMotor.AhoraAsync(datos);
+
+        // Pasados los 20 minutos del inicio, la función queda cerrada para todos los canales y
+        // apartar ya no tiene para qué (RN-30).
+        if (!VentanaDeVenta.AdmiteApartar(funcion, ahora))
+        {
+            return await RechazoConMapaAsync(funcionId, MotivoRechazo.FuncionCerrada);
+        }
 
         Apartado? apartado = null;
         if (apartadoId is not null)
@@ -255,9 +257,41 @@ public class ServicioVenta(CineDbContext datos, IServicioCartelera cartelera) : 
             return new ResultadoCompra(false, Motivo: MotivoRechazo.ButacaNoApartada);
         }
 
-        // La tarifa por fecha y la declaración de edad llegan en la pieza 3. Hoy toda butaca se
-        // vende a la tarifa general.
-        if (lineas.Any(l => l.Tarifa != Tarifa.General))
+        var funcion = await datos.Funciones
+            .Include(f => f.Pelicula)
+            .FirstAsync(f => f.Id == apartado.FuncionId);
+
+        if (funcion.Estado == EstadoFuncion.Cancelada)
+        {
+            await BorrarApartadoAsync(apartado);
+            await datos.SaveChangesAsync();
+            await transaccion.CommitAsync();
+            return new ResultadoCompra(false, Motivo: MotivoRechazo.FuncionCancelada);
+        }
+
+        // En línea se vende hasta el instante en que la función inicia; en taquilla, 20 minutos
+        // más (RN-28, RN-29). El rechazo libera las butacas del intento (R-6).
+        if (!VentanaDeVenta.Permite(funcion, canal, ahora))
+        {
+            await BorrarApartadoAsync(apartado);
+            await datos.SaveChangesAsync();
+            await transaccion.CommitAsync();
+            return new ResultadoCompra(false, Motivo: MotivoRechazo.FuncionCerrada);
+        }
+
+        // Antes de pagar una función con clasificación mayor que cero, el comprador declara que
+        // cumple la edad mínima (RN-33, RF-17). En taquilla la edad la ve el operador en puerta.
+        if (canal == Canal.EnLinea && funcion.Pelicula!.ClasificacionEdad > 0 && !edadDeclarada)
+        {
+            return new ResultadoCompra(false, Motivo: MotivoRechazo.EdadNoDeclarada);
+        }
+
+        // La tarifa elegida tiene que estar disponible para la fecha de la función, y el monto
+        // sale de la configuración vigente en este momento (RN-12 a RN-16).
+        var disponibles = await tarifas.TarifasDeAsync(funcion, ahora);
+        var montoPorTarifa = disponibles.ToDictionary(o => o.Tarifa, o => o.Monto);
+
+        if (lineas.Any(l => !montoPorTarifa.ContainsKey(l.Tarifa)))
         {
             return new ResultadoCompra(false, Motivo: MotivoRechazo.TarifaNoDisponible);
         }
@@ -282,7 +316,7 @@ public class ServicioVenta(CineDbContext datos, IServicioCartelera cartelera) : 
                 Fila = linea.Fila,
                 Numero = linea.Numero,
                 Tarifa = linea.Tarifa,
-                Monto = TarifaGeneralProvisional
+                Monto = montoPorTarifa[linea.Tarifa]
             });
         }
 

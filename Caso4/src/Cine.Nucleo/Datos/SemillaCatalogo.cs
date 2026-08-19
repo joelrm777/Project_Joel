@@ -37,6 +37,17 @@ public static class SemillaCatalogo
             new Pelicula { Id = 2, Titulo = "Noche de Tormenta", DuracionMinutos = 120, ClasificacionEdad = 12 },
             new Pelicula { Id = 3, Titulo = "Camino al Volcán", DuracionMinutos = 95, ClasificacionEdad = 16 });
 
+        // Los montos con los que el cine arranca. La administradora los cambia en la pieza 6,
+        // insertando una fila nueva; esta nunca se actualiza (RN-11, RN-14).
+        modelo.Entity<ConfiguracionTarifa>().HasData(new ConfiguracionTarifa
+        {
+            Id = 1,
+            MontoGeneral = 3500m,
+            MontoEstudiante = 2500m,
+            VigenteDesde = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Unspecified),
+            CuentaId = null
+        });
+
         modelo.Entity<ButacaSala>().HasData(Butacas());
     }
 

@@ -23,7 +23,13 @@ public class PruebasDeVenta
         return (baseDePruebas, funcion.Id);
     }
 
-    private static ServicioVenta Venta(CineDbContext datos) => new(datos, new ServicioCartelera(datos));
+    /// <summary>Los montos sembrados: general 3500, estudiante 2500, miércoles la mitad de la general.</summary>
+    public const decimal MontoGeneral = 3500m;
+    public const decimal MontoEstudiante = 2500m;
+    public const decimal MontoMiercoles = 1750m;
+
+    private static ServicioVenta Venta(CineDbContext datos) =>
+        new(datos, new ServicioCartelera(datos), new ServicioTarifas(datos));
 
     private static IReadOnlyList<Butaca> Butacas(params string[] butacas) =>
         [.. butacas.Select(b => new Butaca(b[..1], int.Parse(b[1..])))];
@@ -127,7 +133,7 @@ public class PruebasDeVenta
         Assert.True(segunda.Exitoso);
         Assert.Equal(primera.Codigo, segunda.Codigo);
         Assert.StartsWith("CV-", primera.Codigo);
-        Assert.Equal(2 * ServicioVenta.TarifaGeneralProvisional, primera.Total);
+        Assert.Equal(2 * MontoGeneral, primera.Total);
 
         using var verificacion = baseDePruebas.Abrir();
         Assert.Equal(1, await verificacion.Compras.CountAsync());
@@ -252,7 +258,7 @@ public class PruebasDeVenta
 
         var boleto = await datos.Boletos.SingleAsync();
         Assert.Equal(Tarifa.General, boleto.Tarifa);
-        Assert.Equal(ServicioVenta.TarifaGeneralProvisional, boleto.Monto);
+        Assert.Equal(MontoGeneral, boleto.Monto);
         Assert.Equal("B", boleto.Fila);
         Assert.Equal(5, boleto.Numero);
 

@@ -48,9 +48,34 @@
 
 <p class="aviso" id="aviso">El mapa se actualiza solo cada 5 segundos.</p>
 
-<section class="compra" id="compra" data-tarifa="@FuncionModel.TarifaGeneral">
+<section class="compra" id="compra"
+         data-tarifas="@System.Text.Json.JsonSerializer.Serialize(Model.Tarifas.Select(t => new { tarifa = t.Tarifa.ToString(), nombre = FuncionModel.NombreDeTarifa(t.Tarifa), monto = t.Monto }))"
+         data-exige-edad="@(Model.ExigeDeclaracionDeEdad ? "si" : "no")"
+         data-edad-minima="@Model.Mapa.ClasificacionEdad">
     <p id="seleccion">Toque las butacas que quiere. Cada una queda apartada 10 minutos.</p>
     <p id="plazo" hidden></p>
+
+    <ul class="tarifas" id="tarifas"></ul>
+
+    <p class="tarifasDisponibles">
+        @if (Model.Mapa.InicioLocal.DayOfWeek == DayOfWeek.Wednesday)
+        {
+            <text>Función de miércoles: toda butaca a mitad de precio, sin tarifa estudiante.</text>
+        }
+        else
+        {
+            <text>Tarifas de esta función: @string.Join(", ", Model.Tarifas.Select(t => $"{FuncionModel.NombreDeTarifa(t.Tarifa)} ₡{t.Monto:N2}")).</text>
+        }
+    </p>
+
+    @if (Model.ExigeDeclaracionDeEdad)
+    {
+        <label class="edad">
+            <input type="checkbox" id="edad" />
+            Declaro que cumplo la edad mínima de @Model.Mapa.ClasificacionEdad años.
+        </label>
+    }
+
     <label for="correo">Correo (opcional, para recibir el código)</label>
     <input type="email" id="correo" name="correo" autocomplete="email" placeholder="nombre@ejemplo.cr" />
     <button type="button" id="pagar" disabled>Pagar</button>

@@ -10,7 +10,10 @@
 
     const funcionId = mapa.dataset.funcionId;
     const panel = document.getElementById('compra');
-    const tarifa = Number(panel.dataset.tarifa);
+    const tarifas = JSON.parse(panel.dataset.tarifas || '[]');
+    const exigeEdad = panel.dataset.exigeEdad === 'si';
+    const listaTarifas = document.getElementById('tarifas');
+    const casillaEdad = document.getElementById('edad');
     const aviso = document.getElementById('aviso');
     const seleccionTexto = document.getElementById('seleccion');
     const plazo = document.getElementById('plazo');
@@ -23,7 +26,7 @@
     // Lo que este comprador tiene apartado en este intento.
     let apartadoId = null;
     let venceEn = null;
-    let mias = new Set();
+    let mias = new Map();
     let pagando = false;
     let claveIdempotencia = null;
 
@@ -55,23 +58,74 @@
         return `${fila}${numero}`;
     }
 
+    function montoDe(nombreTarifa) {
+        const opcion = tarifas.find(t => t.tarifa === nombreTarifa);
+        return opcion ? opcion.monto : 0;
+    }
+
+    function total() {
+        return [...mias.values()].reduce((suma, t) => suma + montoDe(t), 0);
+    }
+
+    function enColones(monto) {
+        return monto.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+    }
+
+    function edadDeclarada() {
+        return !exigeEdad || (casillaEdad && casillaEdad.checked);
+    }
+
+    // Una tarifa por butaca, entre las que la función admite. Nunca se aplica más de una a la
+    // misma butaca (RN-15).
+    function pintarTarifas() {
+        listaTarifas.textContent = '';
+
+        for (const [butaca, tarifaElegida] of mias) {
+            const fila = document.createElement('li');
+            const nombre = document.createElement('span');
+            nombre.textContent = butaca;
+            fila.appendChild(nombre);
+
+            const selector = document.createElement('select');
+            selector.dataset.butaca = butaca;
+
+            for (const opcion of tarifas) {
+                const elemento = document.createElement('option');
+                elemento.value = opcion.tarifa;
+                elemento.textContent = `${opcion.nombre} ${enColones(opcion.monto)}`;
+                elemento.selected = opcion.tarifa === tarifaElegida;
+                selector.appendChild(elemento);
+            }
+
+            selector.addEventListener('change', function () {
+                mias.set(butaca, selector.value);
+                pintarSeleccion();
+            });
+
+            fila.appendChild(selector);
+            listaTarifas.appendChild(fila);
+        }
+    }
+
     function pintarSeleccion() {
         for (const elemento of mapa.querySelectorAll('.butaca')) {
             elemento.classList.toggle('mia', mias.has(elemento.dataset.butaca));
         }
 
         const cantidad = mias.size;
-        botonPagar.disabled = cantidad === 0 || pagando;
+        botonPagar.disabled = cantidad === 0 || pagando || !edadDeclarada();
 
         if (cantidad === 0) {
             seleccionTexto.textContent = 'Toque las butacas que quiere. Cada una queda apartada 10 minutos.';
             plazo.hidden = true;
+            listaTarifas.textContent = '';
+            botonPagar.textContent = 'Pagar';
             return;
         }
 
-        const total = (cantidad * tarifa).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
-        seleccionTexto.textContent = `${cantidad} butaca${cantidad === 1 ? '' : 's'}: ${[...mias].join(', ')} — total ${total}`;
-        botonPagar.textContent = `Pagar ${total}`;
+        seleccionTexto.textContent =
+            `${cantidad} butaca${cantidad === 1 ? '' : 's'}: ${[...mias.keys()].join(', ')} — total ${enColones(total())}`;
+        botonPagar.textContent = `Pagar ${enColones(total())}`;
     }
 
     function pintarPlazo() {
@@ -89,7 +143,8 @@
         if (faltan === 0) {
             apartadoId = null;
             venceEn = null;
-            mias = new Set();
+            mias = new Map();
+            pintarTarifas();
             pintarSeleccion();
             mostrarError('ApartadoVencido');
         }
@@ -124,7 +179,8 @@
         limpiarError();
         apartadoId = datos.apartadoId;
         venceEn = new Date(datos.venceEn).getTime();
-        mias.add(claveDeButaca(fila, numero));
+        mias.set(claveDeButaca(fila, numero), tarifas.length > 0 ? tarifas[0].tarifa : 'General');
+        pintarTarifas();
         pintarSeleccion();
         pintarPlazo();
     }
@@ -143,6 +199,7 @@
             apartadoId = null;
             venceEn = null;
         }
+        pintarTarifas();
         pintarSeleccion();
         await refrescar();
     }
@@ -158,11 +215,16 @@
         // La misma clave en los dos toques deja una sola compra y un solo código (RN-23).
         claveIdempotencia = claveIdempotencia || crypto.randomUUID();
 
-        const butacas = [...mias].map(b => ({ fila: b.slice(0, 1), numero: Number(b.slice(1)) }));
+        const butacas = [...mias].map(([b, t]) => ({
+            fila: b.slice(0, 1),
+            numero: Number(b.slice(1)),
+            tarifa: t
+        }));
+
         const { ok, datos } = await pedir(`/api/apartados/${apartadoId}/pagar`, {
             butacas,
             correo: correo.value || null,
-            edadDeclarada: false,
+            edadDeclarada: edadDeclarada(),
             claveIdempotencia
         });
 
@@ -178,11 +240,10 @@
         limpiarError();
         document.getElementById('codigo').textContent = datos.codigo;
         document.getElementById('detalleCompra').textContent =
-            `${butacas.length} butaca${butacas.length === 1 ? '' : 's'} — total ` +
-            datos.total.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+            `${butacas.length} butaca${butacas.length === 1 ? '' : 's'} — total ` + enColones(datos.total);
         confirmacion.hidden = false;
         panel.hidden = true;
-        mias = new Set();
+        mias = new Map();
         apartadoId = null;
         venceEn = null;
         await refrescar();
@@ -240,6 +301,10 @@
     });
 
     botonPagar.addEventListener('click', pagar);
+
+    if (casillaEdad) {
+        casillaEdad.addEventListener('change', pintarSeleccion);
+    }
 
     setInterval(refrescar, 5000);
     setInterval(pintarPlazo, 1000);

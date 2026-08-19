@@ -45,6 +45,46 @@ public sealed class BaseDePruebas : IDisposable
             .FirstAsync();
     }
 
+    /// <summary>La primera función de la semana que cae en el día pedido.</summary>
+    public async Task<Funcion> PrimeraFuncionDelDiaAsync(DayOfWeek dia)
+    {
+        using var datos = Abrir();
+        var funciones = await datos.Funciones.OrderBy(f => f.InicioLocal).ToListAsync();
+        return funciones.First(f => f.InicioLocal.DayOfWeek == dia);
+    }
+
+    /// <summary>Una función puesta a una hora concreta, para comprobar la ventana de venta.</summary>
+    public async Task<int> CrearFuncionAsync(int peliculaId, int salaId, DateTime inicioLocal)
+    {
+        using var datos = Abrir();
+
+        var plantilla = await datos.ButacasSala
+            .Where(b => b.SalaId == salaId)
+            .Select(b => new { b.Fila, b.Numero, b.EsVendible })
+            .ToListAsync();
+
+        var funcion = new Funcion
+        {
+            PeliculaId = peliculaId,
+            SalaId = salaId,
+            InicioLocal = inicioLocal,
+            AforoVendible = plantilla.Count(b => b.EsVendible),
+            ButacasNoVendibles = [.. plantilla.Where(b => !b.EsVendible)
+                .Select(b => new ButacaNoVendibleFuncion { Fila = b.Fila, Numero = b.Numero })]
+        };
+
+        datos.Funciones.Add(funcion);
+        await datos.SaveChangesAsync();
+        return funcion.Id;
+    }
+
+    /// <summary>La hora del motor, que es la que manda en los vencimientos y las ventanas.</summary>
+    public async Task<DateTime> AhoraDelMotorAsync()
+    {
+        using var datos = Abrir();
+        return await RelojDelMotor.AhoraAsync(datos);
+    }
+
     public void Dispose()
     {
         using var datos = Abrir();

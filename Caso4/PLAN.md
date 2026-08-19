@@ -51,7 +51,7 @@ carpeta.
 |---|---|---|---|
 | 1 | La dueña ve la cartelera y el mapa de butacas | — | cerrada |
 | 2 | Compra en línea a tarifa general | 1 | cerrada |
-| 3 | Tarifas y edad mínima en la compra en línea | 2 | pendiente |
+| 3 | Tarifas y edad mínima en la compra en línea | 2 | cerrada |
 | 4 | Venta en taquilla con cuenta | 3 | pendiente |
 | 5 | Ingreso a la sala en la puerta | 4 | pendiente |
 | 6 | La administradora programa la cartelera | 4 | pendiente |
@@ -286,7 +286,40 @@ final porque un fallo de correo no invalida ninguna compra.
   - Tabla `ConfiguracionTarifa { Id, MontoGeneral, MontoEstudiante, VigenteDesde, CuentaId }` con su
     primera fila sembrada.
 
-**Evidencia**
+**Evidencia** *(18 de agosto de 2026)*
+
+- Migración `20260819022907_ConfiguracionTarifa` con su primera fila sembrada: general 3500,
+  estudiante 2500, vigente desde el 1 de enero de 2026. El miércoles sale de ahí, a la mitad: 1750.
+- `dotnet test`: 24 pruebas, todas pasan. Las de esta pieza:
+  - Una función de miércoles devuelve una sola tarifa, `Miercoles` con monto 1750; pagarla con
+    `Estudiante` da `TarifaNoDisponible`, y pagarla con `Miercoles` cobra 1750 y lo graba en el
+    boleto (CA-3, RN-12, RN-13).
+  - Una función de otro día ofrece `General` 3500 y `Estudiante` 2500, y no ofrece `Miercoles`.
+  - Una compra de dos butacas con una tarifa distinta en cada una cobra 3500 más 2500 y graba
+    cada monto en su boleto (RN-15).
+  - Vendido un boleto a 3500 y cambiada después la tarifa general a 5000, el boleto viejo
+    conserva 3500 y la compra siguiente ya cobra 5000 (CA-4, RN-16).
+  - Sobre una película de clasificación 12, pagar sin declarar la edad da `EdadNoDeclarada` y no
+    crea compra; declarándola, la misma compra pasa. Una película de clasificación 0 no la pide
+    (RF-17, RN-33).
+  - Una función que inició hace un minuto: el pago en línea da `FuncionCerrada` y el rechazo deja
+    la función sin ocupaciones ni apartados, y sin compra (CA-7 en línea, R-6).
+  - Una función que inició hace 21 minutos ya no admite ni apartar: `FuncionCerrada` (RN-30).
+- Contra la aplicación corriendo:
+  - La pantalla del miércoles publica una sola tarifa —`Miercoles` a 1750— y el aviso «Función de
+    miércoles: toda butaca a mitad de precio, sin tarifa estudiante»; la del jueves publica
+    general ₡3 500 y estudiante ₡2 500.
+  - La función de clasificación 12 muestra la casilla «Declaro que cumplo la edad mínima de 12
+    años» y sin marcarla el botón de pagar queda inhabilitado; la de clasificación 0 no la muestra.
+  - Compra de dos butacas del jueves, una general y otra estudiante: código `CV-T3GSN`, total
+    6000, y en la base `G 1 General 3500.00` y `G 2 Estudiante 2500.00`.
+  - En la función del miércoles: pagar con `Estudiante` devuelve `TarifaNoDisponible`, pagar sin
+    declarar edad devuelve `EdadNoDeclarada`, y pagar bien devuelve el código `CV-7J7SX` con total
+    1750, grabado como `F 3 Miercoles 1750.00`.
+  - Apartar en una función que ya inició hace rato devuelve `FuncionCerrada`.
+- La semilla de cartelera pasó a sembrar la semana en curso **y la siguiente** —28 funciones—,
+  que es lo que la especificación permite programar (RN-7). Sin la segunda semana, un martes casi
+  toda la cartelera ya pasó y no quedaba ninguna función que se pudiera comprar.
 
 ---
 
