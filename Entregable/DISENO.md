@@ -34,6 +34,8 @@ Temporizador, que solo dispara el ciclo periódico.
   rechazada no corregida en 7 días (RN-13), disparado por Temporizador.
 - Conservar el detalle completo 7 días desde que llega a finanzas y entregarle el resumen a
   Auditoría y Reportes antes de purgarlo (REG-2).
+- Cuando un viaje queda con un tramo sin distancia, avisar a administrador y finanzas
+  (RN-5) — para eso le pregunta a Integraciones y Autenticación los correos de esos roles.
 
 **Límite con el resto**: no sabe calcular una tarifa ni una distancia — se las pide a
 Tarifas/Distancias. No decide si la jefatura aprueba — eso es de Aprobación. No manda

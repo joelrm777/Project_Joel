@@ -25,4 +25,7 @@ public sealed class FakeDirectorioCorporativo : IDirectorioCorporativo
 
     public async Task<string?> ObtenerCorreoPorId(string userId, CancellationToken ct = default) =>
         await _db.Set<DirectoryAccount>().Where(a => a.Id == userId).Select(a => a.Email).FirstOrDefaultAsync(ct);
+
+    public async Task<IReadOnlyList<string>> ObtenerCorreosPorRol(UserRole role, CancellationToken ct = default) =>
+        await _db.Set<DirectoryAccount>().Where(a => a.Role == role).Select(a => a.Email).ToListAsync(ct);
 }

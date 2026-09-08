@@ -1,0 +1,285 @@
+import { useEffect, useState } from 'react'
+import { Layout } from '../components/Layout'
+import { api, ApiError } from '../lib/api'
+import type { FuelType, RateTableEntry, Store, StoreDistance, VehicleType } from '../lib/types'
+
+type RateTableEntryInput = Omit<RateTableEntry, 'id'>
+
+const emptyRate: RateTableEntryInput = {
+  vehicleType: 'Car',
+  fuelType: 'Gasoline',
+  engineDisplacementMin: 1000,
+  engineDisplacementMax: 3000,
+  vehicleAgeYears: 0,
+  ratePerKm: 200,
+}
+
+export function AdminPage() {
+  return (
+    <Layout title="Administración">
+      <div className="space-y-8">
+        <RateTableSection />
+        <StoresSection />
+        <StoreDistancesSection />
+      </div>
+    </Layout>
+  )
+}
+
+function ErrorBanner({ message }: { message: string | null }) {
+  if (!message) return null
+  return <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-brand-red">{message}</p>
+}
+
+function RateTableSection() {
+  const [rates, setRates] = useState<RateTableEntry[]>([])
+  const [form, setForm] = useState<RateTableEntryInput>(emptyRate)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function reload() {
+    setRates(await api.get<RateTableEntry[]>('/admin/rate-table'))
+  }
+
+  useEffect(() => {
+    reload().catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudo cargar.'))
+  }, [])
+
+  async function handleSubmit() {
+    setError(null)
+    try {
+      if (editingId) {
+        await api.put(`/admin/rate-table/${editingId}`, form)
+      } else {
+        await api.post('/admin/rate-table', form)
+      }
+      setForm(emptyRate)
+      setEditingId(null)
+      await reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo guardar la tarifa.')
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-neutral-200 bg-white p-6">
+      <h2 className="mb-4 text-lg font-semibold">Tabla de tarifas</h2>
+      <ErrorBanner message={error} />
+
+      <table className="mb-4 w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-neutral-200 text-neutral-500">
+            <th className="py-2">Transporte</th>
+            <th>Combustible</th>
+            <th>Cilindraje</th>
+            <th>Antigüedad</th>
+            <th>₡/km</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rates.map((r) => (
+            <tr key={r.id} className="border-b border-neutral-100">
+              <td className="py-2">{r.vehicleType}</td>
+              <td>{r.fuelType}</td>
+              <td>{r.engineDisplacementMin}-{r.engineDisplacementMax}cc</td>
+              <td>{r.vehicleAgeYears} años</td>
+              <td>{r.ratePerKm}</td>
+              <td>
+                <button
+                  className="text-xs text-brand-green underline"
+                  onClick={() => {
+                    setEditingId(r.id)
+                    setForm({
+                      vehicleType: r.vehicleType,
+                      fuelType: r.fuelType,
+                      engineDisplacementMin: r.engineDisplacementMin,
+                      engineDisplacementMax: r.engineDisplacementMax,
+                      vehicleAgeYears: r.vehicleAgeYears,
+                      ratePerKm: r.ratePerKm,
+                    })
+                  }}
+                >
+                  Editar
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="grid grid-cols-2 gap-3 rounded-md border border-dashed border-neutral-300 p-4 sm:grid-cols-3 md:grid-cols-6">
+        <label className="text-xs">
+          Transporte
+          <select value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value as VehicleType })} className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1">
+            <option value="Car">Carro</option>
+            <option value="Motorcycle">Moto</option>
+          </select>
+        </label>
+        <label className="text-xs">
+          Combustible
+          <select value={form.fuelType} onChange={(e) => setForm({ ...form, fuelType: e.target.value as FuelType })} className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1">
+            <option value="Gasoline">Gasolina</option>
+            <option value="Diesel">Diésel</option>
+            <option value="Hybrid">Híbrido</option>
+            <option value="Electric">Eléctrico</option>
+          </select>
+        </label>
+        <label className="text-xs">
+          Cilindraje min
+          <input type="number" value={form.engineDisplacementMin} onChange={(e) => setForm({ ...form, engineDisplacementMin: Number(e.target.value) })} className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1" />
+        </label>
+        <label className="text-xs">
+          Cilindraje max
+          <input type="number" value={form.engineDisplacementMax} onChange={(e) => setForm({ ...form, engineDisplacementMax: Number(e.target.value) })} className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1" />
+        </label>
+        <label className="text-xs">
+          Antigüedad (años)
+          <input type="number" value={form.vehicleAgeYears} onChange={(e) => setForm({ ...form, vehicleAgeYears: Number(e.target.value) })} className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1" />
+        </label>
+        <label className="text-xs">
+          ₡ por km
+          <input type="number" value={form.ratePerKm} onChange={(e) => setForm({ ...form, ratePerKm: Number(e.target.value) })} className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1" />
+        </label>
+      </div>
+      <div className="mt-3 flex gap-3">
+        <button onClick={handleSubmit} className="rounded-md bg-brand-green px-4 py-2 text-sm font-medium text-white hover:bg-brand-green-dark">
+          {editingId ? 'Guardar cambios' : 'Agregar tarifa'}
+        </button>
+        {editingId && (
+          <button
+            onClick={() => {
+              setEditingId(null)
+              setForm(emptyRate)
+            }}
+            className="rounded-md border border-neutral-300 px-4 py-2 text-sm"
+          >
+            Cancelar
+          </button>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function StoresSection() {
+  const [stores, setStores] = useState<Store[]>([])
+  const [name, setName] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  async function reload() {
+    setStores(await api.get<Store[]>('/admin/stores'))
+  }
+
+  useEffect(() => {
+    reload().catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudo cargar.'))
+  }, [])
+
+  async function handleAdd() {
+    setError(null)
+    try {
+      await api.post('/admin/stores', { name })
+      setName('')
+      await reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo crear la tienda.')
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-neutral-200 bg-white p-6">
+      <h2 className="mb-4 text-lg font-semibold">Tiendas</h2>
+      <ErrorBanner message={error} />
+      <ul className="mb-4 flex flex-wrap gap-2">
+        {stores.map((s) => (
+          <li key={s.id} className="rounded-full bg-neutral-100 px-3 py-1 text-sm">
+            {s.id} · {s.name}
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-3">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre de la tienda" className="rounded-md border border-neutral-300 px-2 py-2 text-sm" />
+        <button onClick={handleAdd} className="rounded-md bg-brand-green px-4 py-2 text-sm font-medium text-white hover:bg-brand-green-dark">
+          Agregar tienda
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function StoreDistancesSection() {
+  const [distances, setDistances] = useState<StoreDistance[]>([])
+  const [origin, setOrigin] = useState('')
+  const [destination, setDestination] = useState('')
+  const [km, setKm] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  async function reload() {
+    setDistances(await api.get<StoreDistance[]>('/admin/store-distances'))
+  }
+
+  useEffect(() => {
+    reload().catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudo cargar.'))
+  }, [])
+
+  async function handleSave() {
+    setError(null)
+    try {
+      await api.put('/admin/store-distances', {
+        originStoreId: Number(origin),
+        destinationStoreId: Number(destination),
+        distanceKm: Number(km),
+      })
+      setOrigin('')
+      setDestination('')
+      setKm('')
+      await reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo guardar la distancia.')
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-neutral-200 bg-white p-6">
+      <h2 className="mb-4 text-lg font-semibold">Distancias entre tiendas</h2>
+      <ErrorBanner message={error} />
+
+      <table className="mb-4 w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-neutral-200 text-neutral-500">
+            <th className="py-2">Origen</th>
+            <th>Destino</th>
+            <th>Km</th>
+          </tr>
+        </thead>
+        <tbody>
+          {distances.map((d) => (
+            <tr key={d.id} className="border-b border-neutral-100">
+              <td className="py-2">{d.originStoreId}</td>
+              <td>{d.destinationStoreId}</td>
+              <td>{d.distanceKm}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="flex flex-wrap items-end gap-3 rounded-md border border-dashed border-neutral-300 p-4">
+        <label className="text-xs">
+          ID tienda origen
+          <input value={origin} onChange={(e) => setOrigin(e.target.value)} className="mt-1 block w-28 rounded-md border border-neutral-300 px-2 py-1" />
+        </label>
+        <label className="text-xs">
+          ID tienda destino
+          <input value={destination} onChange={(e) => setDestination(e.target.value)} className="mt-1 block w-28 rounded-md border border-neutral-300 px-2 py-1" />
+        </label>
+        <label className="text-xs">
+          Distancia (km)
+          <input value={km} onChange={(e) => setKm(e.target.value)} className="mt-1 block w-28 rounded-md border border-neutral-300 px-2 py-1" />
+        </label>
+        <button onClick={handleSave} className="rounded-md bg-brand-green px-4 py-2 text-sm font-medium text-white hover:bg-brand-green-dark">
+          Guardar
+        </button>
+      </div>
+    </section>
+  )
+}

@@ -112,8 +112,9 @@ se lleva físicamente a jefatura y luego a finanzas.
 ## Recorridos
 
 **Recorrido principal (termina bien):**
-1. El colaborador ingresa su cédula; el sistema la valida contra el ERP de RH (RN-17) y
-   trae jefatura, departamento, puesto, nombre y correo.
+1. El colaborador inicia sesión (SSO contra el AD); el sistema toma la cédula asociada a esa
+   sesión, la valida contra el ERP de RH (RN-17) y trae jefatura, departamento, puesto,
+   nombre y correo.
 2. El colaborador declara el vehículo del viaje (tipo, placa, tracción, modelo/año,
    cilindraje, combustible) — único para toda la boleta (RN-4).
 3. El colaborador agrega uno o más viajes (cada uno con su fecha y su secuencia de
@@ -149,8 +150,10 @@ mientras hay boletas pendientes, esas boletas conservan la tarifa con la que se 
 
 ## Requisitos funcionales
 
-1. RF-1: El sistema debe permitir a un colaborador iniciar una boleta ingresando su cédula,
-   y traer sus datos del ERP de RH (RN-17).
+1. RF-1: El sistema debe permitir a un colaborador iniciar una boleta y traer sus datos del
+   ERP de RH a partir de la cédula asociada a su sesión ya autenticada (RN-17) — no de una
+   cédula de texto libre, para que un colaborador no pueda armar una boleta a nombre de otra
+   persona.
 2. RF-2: El sistema debe permitir declarar un único vehículo por boleta (RN-4).
 3. RF-3: El sistema debe permitir agregar uno o más viajes a una boleta, cada uno con fecha
    y secuencia de tiendas, validando la ventana de tiempo (RN-6) y la ausencia de

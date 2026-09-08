@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAuth } from './lib/auth'
+import { AdminPage } from './pages/AdminPage'
 import { ApproverPage } from './pages/ApproverPage'
 import { EmployeePage } from './pages/EmployeePage'
 import { FinancePage } from './pages/FinancePage'
@@ -44,6 +45,14 @@ export default function App() {
         element={
           <ProtectedRoute role="Finance">
             <FinancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute role="Administrator">
+            <AdminPage />
           </ProtectedRoute>
         }
       />

@@ -5,9 +5,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Estado del repositorio
 
 `ESPECIFICACION.md`, `DISENO.md` y `PLAN.md` escritos, revisados y aprobados. Construcción en
-curso siguiendo `PLAN.md` pieza por pieza. Cuando exista tooling real (solución .NET,
-proyecto npm), actualizar esta sección con los comandos reales de build/lint/test/correr un
-test individual — no inventarlos antes de que existan.
+curso siguiendo `PLAN.md` pieza por pieza (Pieza 1 lista, ver su Evidencia en `PLAN.md`).
+
+**Este proyecto vive en `Entregable/` dentro de un repo remoto compartido** (`origin` =
+`https://github.com/joelrm777/Project_Joel.git`, rama `master`) que también tiene otro
+proyecto del curso (`ferreteria-pos/`) con su propio historial — conviven como carpetas
+hermanas en la raíz del repo. No tocar `ferreteria-pos/`.
+
+### Backend (`backend/`, ASP.NET Core / C#)
+- Build: `dotnet build` desde `backend/`.
+- Correr la API: `dotnet run --project src/Api/MileageClaims.Api.csproj` (perfil `https` por
+  defecto). En Development aplica migraciones y siembra datos sintéticos automáticamente.
+- Requiere dos User Secrets antes de poder correr (ver "Secretos" más abajo).
+- No hay suite de tests todavía (pendiente en piezas siguientes de `PLAN.md`).
+
+### Frontend (`frontend/`, React + TypeScript + Vite)
+- Instalar deps: `npm install` desde `frontend/`.
+- Correr: `npm run dev` (puerto 5173, con proxy a la API en `https://localhost:7064`).
+- Build de producción: `npm run build`. Type-check solo: `npx tsc --noEmit`.
+
+### Base de datos (SQL Server, EF Core Code-First)
+- Las tablas se crean solas al correr la API en Development (`db.Database.MigrateAsync()`
+  en `Program.cs`), leyendo el connection string de User Secrets.
+- Agregar una migración nueva tras cambiar el modelo de datos:
+  `dotnet ef migrations add <Nombre> --project src/Infrastructure/MileageClaims.Infrastructure.csproj --startup-project src/Api/MileageClaims.Api.csproj -o Migrations`
+  (desde `backend/`; requiere `dotnet tool install --global dotnet-ef` una sola vez).
+- Generar el script SQL plano de las migraciones (para correrlo a mano en SSMS/Azure Data
+  Studio/sqlcmd, o dárselo a alguien sin el proyecto .NET) — **no se versiona**, se regenera
+  cuando haga falta:
+  `dotnet ef migrations script --project src/Infrastructure/MileageClaims.Infrastructure.csproj --startup-project src/Api/MileageClaims.Api.csproj --idempotent -o scripts/InitialCreate.sql`
+- La fábrica de diseño (`AppDbContextFactory` en `Infrastructure`) usa un connection string
+  ficticio solo para poder generar migraciones/scripts sin una base real — no confundir con
+  el connection string de verdad, que vive únicamente en User Secrets.
 
 **Documentos, en orden de autoridad:** `PROYECTO.md` (enunciado original) → `ESPECIFICACION.md`
 (requisitos, reglas de negocio RN-1..RN-17, qué se registra) → `DISENO.md` (arquitectura,
@@ -66,6 +95,13 @@ credenciales). Está bien saber que un archivo de configuración de ese tipo exi
 vive, pero no abrirlo para ver el valor, ni repetirlo, ni guardarlo en ningún lado (memoria
 incluida). Si hace falta tocar ese archivo (agregar una clave nueva, cambiar de motor de
 base de datos), pedirle al usuario el valor o que lo complete él mismo.
+
+El backend necesita dos User Secrets para poder correr, que el usuario configura en su propia
+terminal (nunca pedírselos por chat ni correr el comando por él):
+```
+dotnet user-secrets set "ConnectionStrings:Default" "<connection string de Azure SQL>" --project src/Api
+dotnet user-secrets set "Jwt:SigningKey" "<cadena aleatoria de al menos 32 caracteres>" --project src/Api
+```
 
 ## Qué debe quedar registrado al entregar
 

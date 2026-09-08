@@ -33,12 +33,12 @@ autenticación JWT contra el AD simulado.
 
 | # | Pieza | Depende de | Estado |
 |---|---|---|---|
-| 1 | Recorrido principal completo (camino feliz) | — | pendiente |
-| 2 | Bloqueo por falta de distancia entre tiendas | 1 | pendiente |
-| 3 | Administrador mantiene tarifas y distancias | 1 | pendiente |
-| 4 | Boleta con varios viajes, ventana de tiempo y duplicados | 1 | pendiente |
-| 5 | Cédula no reconocida por el ERP | 1 | pendiente |
-| 6 | Vigencia de tarifa: un cambio no afecta boletas ya calculadas | 1, 3 | pendiente |
+| 1 | Recorrido principal completo (camino feliz) | — | código completo, sin verificar en vivo |
+| 2 | Bloqueo por falta de distancia entre tiendas | 1 | código completo, sin verificar en vivo |
+| 3 | Administrador mantiene tarifas y distancias | 1 | código completo, sin verificar en vivo |
+| 4 | Boleta con varios viajes, ventana de tiempo y duplicados | 1 | código completo, sin verificar en vivo |
+| 5 | Cédula no reconocida por el ERP | 1 | código completo, sin verificar en vivo |
+| 6 | Vigencia de tarifa: un cambio no afecta boletas ya calculadas | 1, 3 | verificado por revisión de código |
 | 7 | Edición y retiro de boleta mientras está pendiente | 1 | pendiente |
 | 8 | Rechazo de jefatura, corrección y reenvío | 1 | pendiente |
 | 9 | Temporizador: recordatorio sin respuesta y descarte automático | 1, 8 | pendiente |
@@ -56,8 +56,8 @@ autenticación JWT contra el AD simulado.
 - Al menos 1 fila de RateTable y suficientes filas de StoreDistance para conectar al menos 3
   tiendas en secuencia, sembradas directo en la base (sin UI de administrador — eso es
   pieza 3).
-- Un colaborador se loguea (SSO simulado), ingresa su cédula, ve sus datos traídos del ERP
-  fake.
+- Un colaborador se loguea (SSO simulado); el sistema toma la cédula asociada a su sesión y
+  trae sus datos del ERP fake — no hay campo de cédula de texto libre (ver RF-1 actualizado).
 - Declara un vehículo (tipo de transporte, placa, tracción, modelo/año, cilindraje,
   combustible) para la boleta.
 - Agrega un viaje con fecha dentro del mes en curso y al menos 2 tiendas con distancia
@@ -97,6 +97,11 @@ Notificaciones (parcial).
   StoreDistance, RateTable, NotificationLog; estados Pending, Approved.
 
 **Evidencia**
+- 2026-09-08: código completo, `dotnet build` sin errores, migración inicial aplicable.
+  Falta correr el recorrido real (pendiente que el usuario configure el connection string
+  de Azure SQL en User Secrets) y falta un proyecto de pruebas automatizadas — ninguna de
+  las dos cosas bloquea seguir con el resto de piezas, pero quedan pendientes antes de
+  poder cerrar esta pieza como verificada de verdad.
 
 ---
 
@@ -116,14 +121,20 @@ Notificaciones (parcial).
 - Insertar la distancia faltante en StoreDistance y reintentar `submit` sobre la misma
   boleta → 200/201, queda Pending.
 
-**Toca**: Boletas, Distancias, Notificaciones.
+**Toca**: Boletas, Distancias, Notificaciones, Integraciones y Autenticación (para saber a
+qué correos avisar por rol).
 
 **Interfaces**
-- Consume: MileageClaim/Trip/Leg y StoreDistance (pieza 1), NotificationLog (pieza 1).
+- Consume: MileageClaim/Trip/Leg y StoreDistance (pieza 1), NotificationLog (pieza 1),
+  `IDirectorioCorporativo.ObtenerCorreosPorRol(rol)` — nueva, agregada en esta pieza.
 - Produce: `MissingDistanceError` (con OriginStoreId/DestinationStoreId) que la SPA
   interpreta.
 
 **Evidencia**
+- 2026-09-08: código completo (`AddTrip` guarda el viaje con tramos incompletos marcados;
+  `Submit` reintenta el cálculo y bloquea con 422 + detalle del tramo si sigue faltando;
+  se notifica a Administrator y Finance vía `IDirectorioCorporativo.ObtenerCorreosPorRol`).
+  `dotnet build` sin errores. Pendiente verificación en vivo (mismo motivo que Pieza 1).
 
 ---
 
@@ -149,6 +160,9 @@ Notificaciones (parcial).
   `/api/admin/stores`.
 
 **Evidencia**
+- 2026-09-08: `AdminController` (backend, ya estaba desde Pieza 1) + página `/admin` en la
+  SPA (tres secciones: tarifas, tiendas, distancias — crear/editar). `dotnet build` y
+  `npm run build` sin errores. Pendiente verificación en vivo.
 
 ---
 
@@ -174,6 +188,11 @@ Notificaciones (parcial).
   original).
 
 **Evidencia**
+- 2026-09-08: la lógica ya existía desde Pieza 1 (`ValidateDateWindow` y
+  `EnsureNotDuplicate` en `MileageClaimService.AddTrip`) — al revisarla para esta pieza se
+  encontró y limpió un parámetro sin usar (`currentClaimId`) en `EnsureNotDuplicate`; se dejó
+  un comentario aclarando que RN-7 exige comparar contra todas las boletas del colaborador,
+  incluida la actual, por diseño. `dotnet build` sin errores. Pendiente verificación en vivo.
 
 ---
 
@@ -195,6 +214,15 @@ Notificaciones (parcial).
 - Produce: —
 
 **Evidencia**
+- 2026-09-08: la ruta de código ya existía desde Pieza 1 (`FakeErpRH.BuscarPorCedula` filtra
+  `IsActive`; `MileageClaimService.Create` lanza `EmployeeNotFoundException` → 404 antes de
+  tocar la base). Se agregó a `IdentitySeeder` un colaborador inactivo de demo
+  (`ex.colaborador@automercado.test`, cédula `333333333`, cuenta AD activa pero ERP
+  inactivo) para poder disparar el caso real. De paso se corrigió una inconsistencia: el
+  formulario de "Nueva boleta" dejaba escribir cualquier cédula, pero el backend siempre usa
+  la del colaborador logueado — se sacó el campo (era un dato que el backend ignoraba) y se
+  actualizó RF-1 en `ESPECIFICACION.md`. `dotnet build` y `npm run build` sin errores.
+  Pendiente verificación en vivo.
 
 ---
 
@@ -217,6 +245,12 @@ Notificaciones (parcial).
 - Produce: —
 
 **Evidencia**
+- 2026-09-08: verificado por revisión de código, sin cambios necesarios. `CalculateRate`
+  tiene un único llamador por acción de colaborador (`AddTrip`, `UpdateVehicle` en
+  `MileageClaimService`); `RateCalculator.Update` (admin) solo muta la fila de `RateTable`
+  en el lugar y nunca toca `Trip.AppliedRatePerKm`, que es un valor copiado y congelado. No
+  hay ninguna ruta de código (incluido `Submit`) que vuelva a pedir la tarifa de un viaje ya
+  agregado. Pendiente verificación en vivo (mismo motivo que piezas anteriores).
 
 ---
 
