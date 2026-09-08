@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta de marca */
+  --color-brand-green: #00a159;
+  --color-brand-green-dark: #007a42;
+  --color-brand-red: #e00614;
+  --color-brand-black: #0a0a0a;
+  --color-brand-white: #ffffff;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-brand-white);
+  color: var(--color-brand-black);
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}

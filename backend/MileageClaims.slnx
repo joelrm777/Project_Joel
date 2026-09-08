@@ -1,0 +1,34 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Api/">
+    <Project Path="src/Api/MileageClaims.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/MileageClaims.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Approvals/">
+    <Project Path="src/Modules/Approvals/MileageClaims.Modules.Approvals.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Claims/">
+    <Project Path="src/Modules/Claims/MileageClaims.Modules.Claims.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Distances/">
+    <Project Path="src/Modules/Distances/MileageClaims.Modules.Distances.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Integrations/">
+    <Project Path="src/Modules/Integrations/MileageClaims.Modules.Integrations.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notifications/">
+    <Project Path="src/Modules/Notifications/MileageClaims.Modules.Notifications.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Rates/">
+    <Project Path="src/Modules/Rates/MileageClaims.Modules.Rates.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Reporting/">
+    <Project Path="src/Modules/Reporting/MileageClaims.Modules.Reporting.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Scheduling/">
+    <Project Path="src/Modules/Scheduling/MileageClaims.Modules.Scheduling.csproj" />
+  </Folder>
+</Solution>
