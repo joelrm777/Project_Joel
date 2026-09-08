@@ -21,6 +21,7 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
     private readonly IDistanceCalculator _distanceCalculator;
     private readonly INotificationSender _notifications;
     private readonly IMileageClaimSummaryStore _summaryStore;
+    private readonly IDirectorioCorporativo _directory;
     private readonly TimeProvider _clock;
 
     public MileageClaimService(
@@ -30,6 +31,7 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
         IDistanceCalculator distanceCalculator,
         INotificationSender notifications,
         IMileageClaimSummaryStore summaryStore,
+        IDirectorioCorporativo directory,
         TimeProvider clock)
     {
         _db = db;
@@ -38,6 +40,7 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
         _distanceCalculator = distanceCalculator;
         _notifications = notifications;
         _summaryStore = summaryStore;
+        _directory = directory;
         _clock = clock;
     }
 
@@ -104,7 +107,7 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
         EnsureEditable(claim);
 
         ValidateDateWindow(request.Date);
-        await EnsureNotDuplicate(claim.EmployeeNationalId, claim.Id, request.Date, request.StoreIdsInOrder, ct);
+        await EnsureNotDuplicate(claim.EmployeeNationalId, request.Date, request.StoreIdsInOrder, ct);
 
         var vehicle = new VehicleDeclaration(claim.VehicleType, claim.FuelType, claim.EngineDisplacement, claim.ModelYear);
         var quote = await _rateCalculator.CalculateRate(vehicle, Today, ct);
@@ -193,6 +196,7 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
         if (missing.Count > 0)
         {
             await _db.SaveChangesAsync(ct);
+            await NotifyMissingDistance(claim, missing, ct);
             throw new MissingDistanceException(missing);
         }
 
@@ -358,6 +362,21 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
 
     // ---- helpers ----
 
+    /// <summary>RN-5: avisa a administrador y finanzas qué tramo falta cargar, sin que el colaborador tenga que hacerlo a mano.</summary>
+    private async Task NotifyMissingDistance(MileageClaim claim, IReadOnlyList<(int OriginStoreId, int DestinationStoreId)> missing, CancellationToken ct)
+    {
+        var recipients = (await _directory.ObtenerCorreosPorRol(Integrations.Domain.UserRole.Administrator, ct))
+            .Concat(await _directory.ObtenerCorreosPorRol(Integrations.Domain.UserRole.Finance, ct));
+
+        var detail = string.Join(", ", missing.Select(l => $"{l.OriginStoreId}->{l.DestinationStoreId}"));
+        var message = $"La boleta de {claim.EmployeeName} está bloqueada: falta la distancia entre tiendas {detail}.";
+
+        foreach (var recipient in recipients.Distinct())
+        {
+            await _notifications.Send(NotificationType.MissingDistance, recipient, claim.Id, message, ct);
+        }
+    }
+
     private static List<int> BuildStoreSequence(Trip trip) =>
         trip.Legs.OrderBy(l => l.SequenceNumber).Select(l => l.OriginStoreId)
             .Append(trip.Legs.OrderBy(l => l.SequenceNumber).Last().DestinationStoreId)
@@ -396,11 +415,12 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
         }
     }
 
-    private async Task EnsureNotDuplicate(string employeeNationalId, Guid currentClaimId, DateOnly date, IReadOnlyList<int> storeIdsInOrder, CancellationToken ct)
+    private async Task EnsureNotDuplicate(string employeeNationalId, DateOnly date, IReadOnlyList<int> storeIdsInOrder, CancellationToken ct)
     {
+        // RN-7: un viaje idéntico no se puede repetir ni en otra boleta ni en la misma —
+        // por eso no se excluye la boleta actual de esta búsqueda.
         var sameEmployeeTrips = await _db.Set<Trip>()
             .Where(t => t.Date == date && t.MileageClaim!.EmployeeNationalId == employeeNationalId)
-            .Include(t => t.Legs)
             .Select(t => new { t.Id, t.MileageClaimId, t.Legs })
             .ToListAsync(ct);
 

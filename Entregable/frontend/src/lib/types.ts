@@ -49,4 +49,21 @@ export interface Store {
   name: string
 }
 
+export interface StoreDistance {
+  id: number
+  originStoreId: number
+  destinationStoreId: number
+  distanceKm: number
+}
+
+export interface RateTableEntry {
+  id: string
+  vehicleType: VehicleType
+  fuelType: FuelType
+  engineDisplacementMin: number
+  engineDisplacementMax: number
+  vehicleAgeYears: number
+  ratePerKm: number
+}
+
 export type UserRole = 'Employee' | 'Approver' | 'Administrator' | 'Finance'

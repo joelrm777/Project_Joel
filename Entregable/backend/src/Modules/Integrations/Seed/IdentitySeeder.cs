@@ -40,7 +40,21 @@ public static class IdentitySeeder
             JobTitle = "Jefe de Tienda",
             IsActive = true
         };
-        db.Set<FakeEmployeeRecord>().AddRange(employee, approverEmployee);
+        // Colaborador inactivo: demuestra RN-17 (cédula que el ERP no reconoce porque la
+        // persona ya no trabaja en la compañía). FakeErpRH.BuscarPorCedula filtra por
+        // IsActive, así que para el ERP esto es indistinguible de "no existe".
+        var inactiveEmployee = new FakeEmployeeRecord
+        {
+            NationalId = "333333333",
+            Name = "Ex Colaborador",
+            Email = "ex.colaborador@automercado.test",
+            ApproverNationalId = "222222222",
+            ApproverEmail = "carlos.jimenez@automercado.test",
+            Department = "Ventas",
+            JobTitle = "Ejecutivo de Ventas",
+            IsActive = false
+        };
+        db.Set<FakeEmployeeRecord>().AddRange(employee, approverEmployee, inactiveEmployee);
 
         DirectoryAccount MakeAccount(string id, string email, UserRole role, string? linkedNationalId)
         {
@@ -60,7 +74,10 @@ public static class IdentitySeeder
             MakeAccount("employee-ana", employee.Email, UserRole.Employee, employee.NationalId),
             MakeAccount("approver-carlos", approverEmployee.Email, UserRole.Approver, approverEmployee.NationalId),
             MakeAccount("admin-1", "admin@automercado.test", UserRole.Administrator, null),
-            MakeAccount("finance-1", "finanzas@automercado.test", UserRole.Finance, null));
+            MakeAccount("finance-1", "finanzas@automercado.test", UserRole.Finance, null),
+            // Su cuenta de AD sigue activa (todavía puede loguearse), pero el ERP ya no la
+            // reconoce — es justo el desfase que RN-17 tiene que atajar.
+            MakeAccount("employee-inactive", inactiveEmployee.Email, UserRole.Employee, inactiveEmployee.NationalId));
 
         await db.SaveChangesAsync(ct);
     }

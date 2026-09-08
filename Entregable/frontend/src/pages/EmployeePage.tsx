@@ -159,7 +159,6 @@ function VehicleFields({
 }
 
 function NewClaimForm({ onCreated }: { onCreated: (claim: MileageClaimDto) => void }) {
-  const [nationalId, setNationalId] = useState('')
   const [vehicleType, setVehicleType] = useState<VehicleType>('Car')
   const [fuelType, setFuelType] = useState<FuelType>('Gasoline')
   const [plateNumber, setPlateNumber] = useState('')
@@ -174,7 +173,9 @@ function NewClaimForm({ onCreated }: { onCreated: (claim: MileageClaimDto) => vo
     setLoading(true)
     try {
       const claim = await api.post<MileageClaimDto>('/mileage-claims', {
-        employeeNationalId: nationalId,
+        // El backend siempre usa la cédula del colaborador logueado (RN-17/RF-1): un
+        // colaborador no puede crear boletas a nombre de otra cédula. Este valor se ignora.
+        employeeNationalId: '',
         vehicleType,
         fuelType,
         plateNumber,
@@ -193,10 +194,9 @@ function NewClaimForm({ onCreated }: { onCreated: (claim: MileageClaimDto) => vo
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-6">
       <h2 className="mb-4 text-lg font-semibold">Nueva boleta</h2>
-      <label className="mb-3 block text-sm">
-        Cédula
-        <input value={nationalId} onChange={(e) => setNationalId(e.target.value)} className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1.5" placeholder="111111111" />
-      </label>
+      <p className="mb-3 text-xs text-neutral-500">
+        Se crea con tus datos de colaborador (los trae el sistema de tu cédula automáticamente).
+      </p>
       <VehicleFields
         vehicleType={vehicleType} setVehicleType={setVehicleType}
         fuelType={fuelType} setFuelType={setFuelType}
