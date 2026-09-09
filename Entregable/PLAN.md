@@ -236,7 +236,7 @@ qué correos avisar por rol).
 - 2026-09-08: la ruta de código ya existía desde Pieza 1 (`FakeErpRH.BuscarPorCedula` filtra
   `IsActive`; `MileageClaimService.Create` lanza `EmployeeNotFoundException` → 404 antes de
   tocar la base). Se agregó a `IdentitySeeder` un colaborador inactivo de demo
-  (`ex.colaborador@automercado.test`, cédula `333333333`, cuenta AD activa pero ERP
+  (`ex.colaborador@retail.test`, cédula `333333333`, cuenta AD activa pero ERP
   inactivo) para poder disparar el caso real. De paso se corrigió una inconsistencia: el
   formulario de "Nueva boleta" dejaba escribir cualquier cédula, pero el backend siempre usa
   la del colaborador logueado — se sacó el campo (era un dato que el backend ignoraba) y se

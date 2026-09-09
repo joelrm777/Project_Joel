@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DataTable, type DataTableColumn } from '../components/DataTable'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../lib/api'
 import type { FuelType, RateTableEntry, Store, StoreDistance, VehicleType } from '../lib/types'
@@ -14,15 +15,46 @@ const emptyRate: RateTableEntryInput = {
   ratePerKm: 200,
 }
 
+const distanceColumns: DataTableColumn<StoreDistance>[] = [
+  { key: 'originStoreId', header: 'Origen', render: (d) => d.originStoreId, sortAccessor: (d) => d.originStoreId },
+  { key: 'destinationStoreId', header: 'Destino', render: (d) => d.destinationStoreId, sortAccessor: (d) => d.destinationStoreId },
+  { key: 'distanceKm', header: 'Km', render: (d) => d.distanceKm, sortAccessor: (d) => d.distanceKm },
+]
+
+type AdminTab = 'timer' | 'rates' | 'stores' | 'distances'
+
+const tabs: { key: AdminTab; label: string }[] = [
+  { key: 'timer', label: 'Temporizador' },
+  { key: 'rates', label: 'Tabla de tarifas' },
+  { key: 'stores', label: 'Tiendas' },
+  { key: 'distances', label: 'Distancias entre tiendas' },
+]
+
 export function AdminPage() {
+  const [tab, setTab] = useState<AdminTab>('timer')
+
   return (
     <Layout title="Administración">
-      <div className="space-y-8">
-        <TimerSection />
-        <RateTableSection />
-        <StoresSection />
-        <StoreDistancesSection />
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-neutral-200">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`-mb-px rounded-t-md border-b-2 px-4 py-2 text-sm font-medium ${
+              tab === t.key
+                ? 'border-brand-green text-brand-green'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {tab === 'timer' && <TimerSection />}
+      {tab === 'rates' && <RateTableSection />}
+      {tab === 'stores' && <StoresSection />}
+      {tab === 'distances' && <StoreDistancesSection />}
     </Layout>
   )
 }
@@ -107,52 +139,56 @@ function RateTableSection() {
     }
   }
 
+  const rateColumns: DataTableColumn<RateTableEntry>[] = [
+    { key: 'vehicleType', header: 'Transporte', render: (r) => r.vehicleType, sortAccessor: (r) => r.vehicleType },
+    { key: 'fuelType', header: 'Combustible', render: (r) => r.fuelType, sortAccessor: (r) => r.fuelType },
+    {
+      key: 'displacement',
+      header: 'Cilindraje',
+      render: (r) => `${r.engineDisplacementMin}-${r.engineDisplacementMax}cc`,
+      sortAccessor: (r) => r.engineDisplacementMin,
+    },
+    { key: 'age', header: 'Antigüedad', render: (r) => `${r.vehicleAgeYears} años`, sortAccessor: (r) => r.vehicleAgeYears },
+    { key: 'rate', header: '₡/km', render: (r) => r.ratePerKm, sortAccessor: (r) => r.ratePerKm },
+    {
+      key: 'actions',
+      header: '',
+      render: (r) => (
+        <button
+          className="text-xs text-brand-green underline"
+          onClick={() => {
+            setEditingId(r.id)
+            setForm({
+              vehicleType: r.vehicleType,
+              fuelType: r.fuelType,
+              engineDisplacementMin: r.engineDisplacementMin,
+              engineDisplacementMax: r.engineDisplacementMax,
+              vehicleAgeYears: r.vehicleAgeYears,
+              ratePerKm: r.ratePerKm,
+            })
+          }}
+        >
+          Editar
+        </button>
+      ),
+    },
+  ]
+
   return (
     <section className="rounded-xl border border-neutral-200 bg-white p-6">
       <h2 className="mb-4 text-lg font-semibold">Tabla de tarifas</h2>
       <ErrorBanner message={error} />
 
-      <table className="mb-4 w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 text-neutral-500">
-            <th className="py-2">Transporte</th>
-            <th>Combustible</th>
-            <th>Cilindraje</th>
-            <th>Antigüedad</th>
-            <th>₡/km</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rates.map((r) => (
-            <tr key={r.id} className="border-b border-neutral-100">
-              <td className="py-2">{r.vehicleType}</td>
-              <td>{r.fuelType}</td>
-              <td>{r.engineDisplacementMin}-{r.engineDisplacementMax}cc</td>
-              <td>{r.vehicleAgeYears} años</td>
-              <td>{r.ratePerKm}</td>
-              <td>
-                <button
-                  className="text-xs text-brand-green underline"
-                  onClick={() => {
-                    setEditingId(r.id)
-                    setForm({
-                      vehicleType: r.vehicleType,
-                      fuelType: r.fuelType,
-                      engineDisplacementMin: r.engineDisplacementMin,
-                      engineDisplacementMax: r.engineDisplacementMax,
-                      vehicleAgeYears: r.vehicleAgeYears,
-                      ratePerKm: r.ratePerKm,
-                    })
-                  }}
-                >
-                  Editar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="mb-4">
+        <DataTable
+          columns={rateColumns}
+          data={rates}
+          rowKey={(r) => r.id}
+          getSearchText={(r) => `${r.vehicleType} ${r.fuelType}`}
+          emptyMessage="Todavía no hay tarifas."
+          searchPlaceholder="Buscar transporte o combustible…"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3 rounded-md border border-dashed border-neutral-300 p-4 sm:grid-cols-3 md:grid-cols-6">
         <label className="text-xs">
@@ -290,24 +326,16 @@ function StoreDistancesSection() {
       <h2 className="mb-4 text-lg font-semibold">Distancias entre tiendas</h2>
       <ErrorBanner message={error} />
 
-      <table className="mb-4 w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 text-neutral-500">
-            <th className="py-2">Origen</th>
-            <th>Destino</th>
-            <th>Km</th>
-          </tr>
-        </thead>
-        <tbody>
-          {distances.map((d) => (
-            <tr key={d.id} className="border-b border-neutral-100">
-              <td className="py-2">{d.originStoreId}</td>
-              <td>{d.destinationStoreId}</td>
-              <td>{d.distanceKm}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="mb-4">
+        <DataTable
+          columns={distanceColumns}
+          data={distances}
+          rowKey={(d) => String(d.id)}
+          getSearchText={(d) => `${d.originStoreId} ${d.destinationStoreId}`}
+          emptyMessage="Todavía no hay distancias registradas."
+          searchPlaceholder="Buscar por ID de tienda…"
+        />
+      </div>
 
       <div className="flex flex-wrap items-end gap-3 rounded-md border border-dashed border-neutral-300 p-4">
         <label className="text-xs">

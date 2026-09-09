@@ -29,6 +29,11 @@ public sealed class ApprovalsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<MileageClaimDto>>> Pending(CancellationToken ct) =>
         Ok(await _claims.GetForApprover(ApproverEmail, ct));
 
+    /// <summary>Historial propio de la jefatura: lo que ya aprobó (no la cola de pendientes).</summary>
+    [HttpGet("approved")]
+    public async Task<ActionResult<IReadOnlyList<MileageClaimDto>>> Approved(CancellationToken ct) =>
+        Ok(await _claims.GetApprovedByApprover(ApproverEmail, ct));
+
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
     {

@@ -8,7 +8,10 @@ namespace MileageClaims.Api.Controllers;
 
 [ApiController]
 [Route("api/mileage-claims")]
-[Authorize(Roles = "Employee")]
+// Jefatura, Administrador y Finanzas también cobran su propio kilometraje, además de su
+// rol principal (aprobar / mantener catálogos / consolidar pagos) — ver IdentitySeeder
+// para cómo quedan vinculados a un colaborador propio.
+[Authorize(Roles = "Employee,Approver,Administrator,Finance")]
 public sealed class MileageClaimsController : ControllerBase
 {
     private readonly IMileageClaimService _claims;

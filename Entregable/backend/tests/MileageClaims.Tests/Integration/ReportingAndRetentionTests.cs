@@ -82,7 +82,7 @@ public sealed class ReportingAndRetentionTests
     {
         using var host = TestHost.Create();
         var scenario = TestData.SeedStandardScenario(host.Db);
-        var otherApproverEmployee = TestData.SeedEmployee(host.Db, "555555555", "666666666", "666666666@automercado.test");
+        var otherApproverEmployee = TestData.SeedEmployee(host.Db, "555555555", "666666666", "666666666@retail.test");
         var claims = host.Get<IMileageClaimService>();
         var approvals = host.Get<IApprovalService>();
         var statusUpdater = host.Get<IMileageClaimStatusUpdater>();

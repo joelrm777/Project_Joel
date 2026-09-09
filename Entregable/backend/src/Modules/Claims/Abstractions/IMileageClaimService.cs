@@ -28,6 +28,9 @@ public interface IMileageClaimService
 
     Task<IReadOnlyList<MileageClaimDto>> GetForApprover(string approverEmail, CancellationToken ct = default);
 
+    /// <summary>Boletas que esa jefatura ya aprobó (para su propio historial, no la cola de pendientes).</summary>
+    Task<IReadOnlyList<MileageClaimDto>> GetApprovedByApprover(string approverEmail, CancellationToken ct = default);
+
     /// <summary>RF-10: lo que consume Finanzas, en tiempo real.</summary>
     Task<IReadOnlyList<MileageClaimDto>> GetApproved(CancellationToken ct = default);
 }

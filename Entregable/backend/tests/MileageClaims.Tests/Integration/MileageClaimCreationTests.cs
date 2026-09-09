@@ -140,7 +140,7 @@ public sealed class MileageClaimCreationTests
     {
         using var host = TestHost.Create();
         TestData.SeedStandardScenario(host.Db);
-        var inactive = TestData.SeedEmployee(host.Db, "444444444", "222222222", "222222222@automercado.test", isActive: false);
+        var inactive = TestData.SeedEmployee(host.Db, "444444444", "222222222", "222222222@retail.test", isActive: false);
         var claims = host.Get<IMileageClaimService>();
 
         await Assert.ThrowsAsync<EmployeeNotFoundException>(() => claims.Create(inactive.NationalId, Vehicle()));

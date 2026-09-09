@@ -257,6 +257,16 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
         return claims.Select(ToDto).ToList();
     }
 
+    public async Task<IReadOnlyList<MileageClaimDto>> GetApprovedByApprover(string approverEmail, CancellationToken ct = default)
+    {
+        var claims = await _db.Set<MileageClaim>()
+            .Include(c => c.Trips).ThenInclude(t => t.Legs)
+            .Where(c => c.ApproverEmail == approverEmail && c.Status == MileageClaimStatus.Approved)
+            .OrderByDescending(c => c.DecidedAt)
+            .ToListAsync(ct);
+        return claims.Select(ToDto).ToList();
+    }
+
     public async Task<IReadOnlyList<MileageClaimDto>> GetApproved(CancellationToken ct = default)
     {
         var claims = await _db.Set<MileageClaim>()

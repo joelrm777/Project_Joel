@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { DataTable, type DataTableColumn } from '../components/DataTable'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../lib/api'
-import type { DriveType, FuelType, MileageClaimDto, Store, VehicleType } from '../lib/types'
+import type { DriveType, FuelType, MileageClaimDto, Store, TripDto, VehicleType } from '../lib/types'
 
 const statusStyles: Record<string, string> = {
   Draft: 'bg-neutral-100 text-neutral-700',
@@ -13,6 +14,30 @@ const statusStyles: Record<string, string> = {
 
 function money(amount: number) {
   return amount.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })
+}
+
+function tripColumns(editable: boolean, busy: boolean, onRemove: (tripId: string) => void): DataTableColumn<TripDto>[] {
+  return [
+    { key: 'date', header: 'Fecha', render: (t) => t.date, sortAccessor: (t) => t.date },
+    { key: 'rateSummary', header: 'Tarifa', render: (t) => t.rateSummary },
+    { key: 'totalDistance', header: 'Distancia', render: (t) => `${t.totalDistance} km`, sortAccessor: (t) => t.totalDistance },
+    { key: 'totalAmount', header: 'Monto', render: (t) => money(t.totalAmount), sortAccessor: (t) => t.totalAmount },
+    { key: 'isDistanceComplete', header: 'Completo', render: (t) => (t.isDistanceComplete ? '✓' : 'Falta tramo') },
+    {
+      key: 'actions',
+      header: '',
+      render: (t) =>
+        editable && (
+          <button
+            disabled={busy}
+            onClick={() => onRemove(t.id)}
+            className="text-xs text-brand-red underline disabled:opacity-60"
+          >
+            Quitar
+          </button>
+        ),
+    },
+  ]
 }
 
 export function EmployeePage() {
@@ -340,45 +365,13 @@ function ClaimDetail({ claim, onChanged }: { claim: MileageClaimDto; onChanged: 
         </div>
       )}
 
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 text-neutral-500">
-            <th className="py-2">Fecha</th>
-            <th>Tarifa</th>
-            <th>Distancia</th>
-            <th>Monto</th>
-            <th>Completo</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {claim.trips.map((t) => (
-            <tr key={t.id} className="border-b border-neutral-100">
-              <td className="py-2">{t.date}</td>
-              <td>{t.rateSummary}</td>
-              <td>{t.totalDistance} km</td>
-              <td>{money(t.totalAmount)}</td>
-              <td>{t.isDistanceComplete ? '✓' : 'Falta tramo'}</td>
-              <td>
-                {editable && (
-                  <button
-                    disabled={busy}
-                    onClick={() => run(() => api.delete(`/mileage-claims/${claim.id}/trips/${t.id}`))}
-                    className="text-xs text-brand-red underline disabled:opacity-60"
-                  >
-                    Quitar
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-          {claim.trips.length === 0 && (
-            <tr>
-              <td colSpan={6} className="py-3 text-neutral-500">Sin viajes todavía.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <DataTable
+        columns={tripColumns(editable, busy, (tripId) => run(() => api.delete(`/mileage-claims/${claim.id}/trips/${tripId}`)))}
+        data={claim.trips}
+        rowKey={(t) => t.id}
+        pageSize={5}
+        emptyMessage="Sin viajes todavía."
+      />
 
       <p className="mt-3 text-right text-base font-semibold">Total: {money(claim.totalAmount)}</p>
 

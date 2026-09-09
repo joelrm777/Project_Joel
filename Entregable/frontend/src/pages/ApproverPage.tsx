@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { DataTable, type DataTableColumn } from '../components/DataTable'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../lib/api'
 import type { MileageClaimDto } from '../lib/types'
@@ -7,7 +8,41 @@ function money(amount: number) {
   return amount.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })
 }
 
+type Tab = 'pending' | 'approved'
+
 export function ApproverPage() {
+  const [tab, setTab] = useState<Tab>('pending')
+
+  return (
+    <Layout title="Aprobaciones">
+      <div className="mb-6 flex gap-2">
+        <TabButton active={tab === 'pending'} onClick={() => setTab('pending')}>
+          Pendientes
+        </TabButton>
+        <TabButton active={tab === 'approved'} onClick={() => setTab('approved')}>
+          Boletas que aprobé
+        </TabButton>
+      </div>
+
+      {tab === 'pending' ? <PendingSection /> : <ApprovedSection />}
+    </Layout>
+  )
+}
+
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-md px-4 py-2 text-sm font-medium ${
+        active ? 'bg-brand-green text-white' : 'border border-neutral-300 text-neutral-600 hover:bg-neutral-100'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function PendingSection() {
   const [claims, setClaims] = useState<MileageClaimDto[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -53,7 +88,7 @@ export function ApproverPage() {
   }
 
   return (
-    <Layout title="Boletas pendientes de aprobación">
+    <>
       {error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-brand-red">{error}</p>}
 
       <div className="space-y-4">
@@ -94,6 +129,52 @@ export function ApproverPage() {
         ))}
         {claims.length === 0 && <p className="text-sm text-neutral-500">No hay boletas pendientes.</p>}
       </div>
-    </Layout>
+    </>
+  )
+}
+
+function ApprovedSection() {
+  const [claims, setClaims] = useState<MileageClaimDto[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api
+      .get<MileageClaimDto[]>('/approvals/approved')
+      .then(setClaims)
+      .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudo cargar.'))
+  }, [])
+
+  const columns: DataTableColumn<MileageClaimDto>[] = [
+    { key: 'employeeName', header: 'Colaborador', render: (c) => c.employeeName, sortAccessor: (c) => c.employeeName },
+    {
+      key: 'vehicle',
+      header: 'Vehículo',
+      render: (c) => `${c.vehicleType} · ${c.plateNumber}`,
+      sortAccessor: (c) => c.plateNumber,
+    },
+    {
+      key: 'decidedAt',
+      header: 'Decidida',
+      render: (c) => c.decidedAt?.slice(0, 10),
+      sortAccessor: (c) => c.decidedAt ?? '',
+    },
+    { key: 'totalAmount', header: 'Monto', render: (c) => money(c.totalAmount), sortAccessor: (c) => c.totalAmount },
+  ]
+
+  return (
+    <>
+      {error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-brand-red">{error}</p>}
+
+      <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <DataTable
+          columns={columns}
+          data={claims}
+          rowKey={(c) => c.id}
+          getSearchText={(c) => `${c.employeeName} ${c.plateNumber}`}
+          emptyMessage="Todavía no has aprobado ninguna boleta."
+          searchPlaceholder="Buscar colaborador o placa…"
+        />
+      </div>
+    </>
   )
 }

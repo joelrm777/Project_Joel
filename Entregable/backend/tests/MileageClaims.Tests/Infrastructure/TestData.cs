@@ -22,7 +22,7 @@ public static class TestData
         {
             NationalId = nationalId,
             Name = $"Empleado {nationalId}",
-            Email = $"{nationalId}@automercado.test",
+            Email = $"{nationalId}@retail.test",
             ApproverNationalId = approverNationalId,
             ApproverEmail = approverEmail,
             Department = "Ventas",
@@ -116,7 +116,7 @@ public static class TestData
     public static StandardScenario SeedStandardScenario(AppDbContext db, string seed = "")
     {
         var approverNationalId = $"222222222{seed}";
-        var approverEmail = $"{approverNationalId}@automercado.test";
+        var approverEmail = $"{approverNationalId}@retail.test";
         var employee = SeedEmployee(db, $"111111111{seed}", approverNationalId, approverEmail);
 
         SeedRate(db, VehicleType.Car, FuelType.Gasoline, 1000, 3000, ageYears: 0, ratePerKm: 100m);
@@ -127,8 +127,8 @@ public static class TestData
         SeedDistance(db, storeA.Id, storeB.Id, 10m);
         SeedDistance(db, storeB.Id, storeC.Id, 15m);
 
-        var adminEmail = $"admin{seed}@automercado.test";
-        var financeEmail = $"finanzas{seed}@automercado.test";
+        var adminEmail = $"admin{seed}@retail.test";
+        var financeEmail = $"finanzas{seed}@retail.test";
         SeedAccount(db, $"admin-1{seed}", adminEmail, UserRole.Administrator);
         SeedAccount(db, $"finance-1{seed}", financeEmail, UserRole.Finance);
 

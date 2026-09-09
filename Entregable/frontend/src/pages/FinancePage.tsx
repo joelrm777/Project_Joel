@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { DataTable, type DataTableColumn } from '../components/DataTable'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../lib/api'
-import type { MileageClaimDto, SummaryReport } from '../lib/types'
+import type { MileageClaimDto, SummaryReport, SummaryReportRow } from '../lib/types'
 
 function money(amount: number) {
   return amount.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })
@@ -18,35 +19,32 @@ export function FinancePage() {
       .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudo cargar.'))
   }, [])
 
+  const columns: DataTableColumn<MileageClaimDto>[] = [
+    { key: 'employeeName', header: 'Colaborador', render: (c) => c.employeeName, sortAccessor: (c) => c.employeeName },
+    { key: 'approverEmail', header: 'Jefatura', render: (c) => c.approverEmail, sortAccessor: (c) => c.approverEmail },
+    {
+      key: 'financeReceivedAt',
+      header: 'Recibida',
+      render: (c) => c.financeReceivedAt?.slice(0, 10),
+      sortAccessor: (c) => c.financeReceivedAt ?? '',
+    },
+    { key: 'totalAmount', header: 'Monto', render: (c) => money(c.totalAmount), sortAccessor: (c) => c.totalAmount },
+  ]
+
   return (
     <Layout title="Boletas aprobadas">
       {error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-brand-red">{error}</p>}
 
-      <table className="mb-8 w-full rounded-xl border border-neutral-200 bg-white text-left text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 text-neutral-500">
-            <th className="px-4 py-3">Colaborador</th>
-            <th>Jefatura</th>
-            <th>Recibida</th>
-            <th className="pr-4">Monto</th>
-          </tr>
-        </thead>
-        <tbody>
-          {claims.map((c) => (
-            <tr key={c.id} className="border-b border-neutral-100">
-              <td className="px-4 py-3">{c.employeeName}</td>
-              <td>{c.approverEmail}</td>
-              <td>{c.financeReceivedAt?.slice(0, 10)}</td>
-              <td className="pr-4 font-medium">{money(c.totalAmount)}</td>
-            </tr>
-          ))}
-          {claims.length === 0 && (
-            <tr>
-              <td colSpan={4} className="px-4 py-3 text-neutral-500">Todavía no hay boletas aprobadas.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <div className="mb-8 rounded-xl border border-neutral-200 bg-white p-4">
+        <DataTable
+          columns={columns}
+          data={claims}
+          rowKey={(c) => c.id}
+          getSearchText={(c) => `${c.employeeName} ${c.approverEmail}`}
+          emptyMessage="Todavía no hay boletas aprobadas."
+          searchPlaceholder="Buscar colaborador o jefatura…"
+        />
+      </div>
 
       <ReportSection />
     </Layout>
@@ -85,7 +83,7 @@ function ReportSection() {
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="text-xs">
           Correo de jefatura (opcional)
-          <input value={approverEmail} onChange={(e) => setApproverEmail(e.target.value)} className="mt-1 block w-64 rounded-md border border-neutral-300 px-2 py-1.5" placeholder="carlos.jimenez@automercado.test" />
+          <input value={approverEmail} onChange={(e) => setApproverEmail(e.target.value)} className="mt-1 block w-64 rounded-md border border-neutral-300 px-2 py-1.5" placeholder="carlos.jimenez@retail.test" />
         </label>
         <label className="text-xs">
           Desde
@@ -119,35 +117,29 @@ function ReportSection() {
             </div>
           </div>
 
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-neutral-200 text-neutral-500">
-                <th className="py-2">Colaborador</th>
-                <th>Enviada</th>
-                <th>Decidida</th>
-                <th>Estado</th>
-                <th>Monto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.rows.map((r) => (
-                <tr key={r.mileageClaimId} className="border-b border-neutral-100">
-                  <td className="py-2">{r.employeeName}</td>
-                  <td>{r.submittedAt.slice(0, 10)}</td>
-                  <td>{r.decidedAt?.slice(0, 10) ?? '—'}</td>
-                  <td>{r.status}</td>
-                  <td>{money(r.totalAmount)}</td>
-                </tr>
-              ))}
-              {report.rows.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-3 text-neutral-500">Sin resultados para ese filtro.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <DataTable
+            columns={reportColumns}
+            data={report.rows}
+            rowKey={(r) => r.mileageClaimId}
+            getSearchText={(r) => `${r.employeeName} ${r.status}`}
+            emptyMessage="Sin resultados para ese filtro."
+            searchPlaceholder="Buscar colaborador o estado…"
+          />
         </>
       )}
     </section>
   )
 }
+
+const reportColumns: DataTableColumn<SummaryReportRow>[] = [
+  { key: 'employeeName', header: 'Colaborador', render: (r) => r.employeeName, sortAccessor: (r) => r.employeeName },
+  { key: 'submittedAt', header: 'Enviada', render: (r) => r.submittedAt.slice(0, 10), sortAccessor: (r) => r.submittedAt },
+  {
+    key: 'decidedAt',
+    header: 'Decidida',
+    render: (r) => r.decidedAt?.slice(0, 10) ?? '—',
+    sortAccessor: (r) => r.decidedAt ?? '',
+  },
+  { key: 'status', header: 'Estado', render: (r) => r.status, sortAccessor: (r) => r.status },
+  { key: 'totalAmount', header: 'Monto', render: (r) => money(r.totalAmount), sortAccessor: (r) => r.totalAmount },
+]

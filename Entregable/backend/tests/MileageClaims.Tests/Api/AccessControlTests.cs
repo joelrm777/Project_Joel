@@ -57,16 +57,16 @@ public sealed class AccessControlTests : IClassFixture<ApiFactoryFixture>
     public async Task Login_valido_da_token_con_el_rol_correcto_e_invalido_da_401()
     {
         using var scope = _factory.CreateSeedScope();
-        TestData.SeedAccount(scope.ServiceProvider.GetRequiredService<AppDbContext>(), "login-employee-t1", "login.t1@automercado.test", UserRole.Employee);
+        TestData.SeedAccount(scope.ServiceProvider.GetRequiredService<AppDbContext>(), "login-employee-t1", "login.t1@retail.test", UserRole.Employee);
 
         var client = _factory.CreateClient();
 
-        var ok = await client.PostAsJsonAsync("/api/auth/login", new { email = "login.t1@automercado.test", password = TestData.DemoPassword });
+        var ok = await client.PostAsJsonAsync("/api/auth/login", new { email = "login.t1@retail.test", password = TestData.DemoPassword });
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
         var body = await ok.Content.ReadFromJsonAsync<LoginResponse>();
         Assert.Equal("Employee", body!.Role);
 
-        var bad = await client.PostAsJsonAsync("/api/auth/login", new { email = "login.t1@automercado.test", password = "contraseña-incorrecta" });
+        var bad = await client.PostAsJsonAsync("/api/auth/login", new { email = "login.t1@retail.test", password = "contraseña-incorrecta" });
         Assert.Equal(HttpStatusCode.Unauthorized, bad.StatusCode);
     }
 
@@ -107,7 +107,7 @@ public sealed class AccessControlTests : IClassFixture<ApiFactoryFixture>
         var scenario = TestData.SeedStandardScenario(db, seed: "t3");
         TestData.SeedAccount(db, "employee-owner-t3", scenario.EmployeeEmail, UserRole.Employee, scenario.EmployeeNationalId);
         TestData.SeedAccount(db, "approver-real-t3", scenario.ApproverEmail, UserRole.Approver, "222222222t3");
-        TestData.SeedAccount(db, "approver-impostor-t3", "impostor.t3@automercado.test", UserRole.Approver, null);
+        TestData.SeedAccount(db, "approver-impostor-t3", "impostor.t3@retail.test", UserRole.Approver, null);
 
         var employeeClient = _factory.CreateClient();
         AuthorizedClient(employeeClient, await LoginAsync(employeeClient, scenario.EmployeeEmail));
@@ -122,7 +122,7 @@ public sealed class AccessControlTests : IClassFixture<ApiFactoryFixture>
         await employeeClient.PostAsync($"/api/mileage-claims/{claim.Id}/submit", null);
 
         var impostorClient = _factory.CreateClient();
-        AuthorizedClient(impostorClient, await LoginAsync(impostorClient, "impostor.t3@automercado.test"));
+        AuthorizedClient(impostorClient, await LoginAsync(impostorClient, "impostor.t3@retail.test"));
 
         var approveResponse = await impostorClient.PostAsync($"/api/approvals/{claim.Id}/approve", null);
         Assert.Equal(HttpStatusCode.Forbidden, approveResponse.StatusCode);
@@ -134,10 +134,10 @@ public sealed class AccessControlTests : IClassFixture<ApiFactoryFixture>
     {
         using var scope = _factory.CreateSeedScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        TestData.SeedAccount(db, "employee-plain-t4", "empleado.plano.t4@automercado.test", UserRole.Employee);
+        TestData.SeedAccount(db, "employee-plain-t4", "empleado.plano.t4@retail.test", UserRole.Employee);
 
         var client = _factory.CreateClient();
-        AuthorizedClient(client, await LoginAsync(client, "empleado.plano.t4@automercado.test"));
+        AuthorizedClient(client, await LoginAsync(client, "empleado.plano.t4@retail.test"));
 
         var response = await client.GetAsync("/api/admin/rate-table");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
