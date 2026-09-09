@@ -72,6 +72,12 @@ Boletas quien bloquea el envío y dispara el aviso a administrador/finanzas.
 **Responsabilidades**:
 - Asignar la boleta enviada a la jefatura correspondiente; registrar aprobación o rechazo
   todo-o-nada (RN-9), exigiendo motivo en el rechazo (RN-11).
+- Cuando quien envía la boleta es también jefatura, administrador o finanzas, la jefatura
+  correspondiente es otra jefatura designada para eso — nunca la misma persona (RN-18); ese
+  dato sale del ERP fake igual que para cualquier colaborador, no es un caso especial en el
+  código de Aprobación.
+- Exponer, además de la cola de pendientes de una jefatura, el historial de boletas que esa
+  jefatura ya decidió (aprobadas), para su propia consulta (RF-18).
 - Marcar boletas vencidas de recordatorio (plazo configurable, por defecto 2 días hábiles)
   para que el Temporizador dispare el aviso repetido (RN-14).
 - Avisarle a Boletas el resultado: aprobada pasa a Auditoría y Finanzas; rechazada vuelve a
@@ -299,10 +305,16 @@ programadas o si vive dentro del mismo proceso.
 | Mecanismo de sesión SSO simulado | Cookie de sesión, JWT | JWT | SPA y backend son procesos separados; JWT evita cookies cross-origin en el tiempo disponible. |
 | Registro de correos simulados | Log de texto plano, tabla `NotificationLog` | Tabla `NotificationLog` | Se puede consultar y mostrar en la demo sin depender de archivos de log. |
 | Formato de `AppliedRateSummary` | Snapshot completo de `RateTable`, texto descriptivo | Texto descriptivo | Alcanza para auditar "qué tarifa se usó" sin duplicar toda la fila de `RateTable` en cada boleta. |
+| Jerarquía para evitar auto-aprobación (RN-18) | Aprobación por gerencia general única, aprobación cruzada entre jefaturas, jefatura senior dedicada | Jefatura senior dedicada | Una sola jefatura de nivel superior (seedeada en el ERP fake) aprueba las boletas propias de cualquier jefatura, administrador o finanzas — simple de sembrar, sin ciclos de aprobación cruzada ni casos especiales en Aprobación. |
 
 ## Decisiones dejadas abiertas
 
 | Qué no se decidió | Quién lo decide y cuándo |
 |---|---|
 | Intervalo exacto del `BackgroundService` (`TimerIntervalMinutes`) | Se deja configurable en `SystemConfiguration`; el valor de arranque lo fija quien construya la pieza del Temporizador, en `PLAN.md`. |
-| Estructura de roles y permisos dentro de Integraciones y Autenticación (tablas exactas, cómo se seedean colaborador/jefatura/administrador/finanzas fake) | Quien construya la pieza de autenticación en `PLAN.md`, siguiendo el contrato `IDirectorioCorporativo` ya definido acá. |
+
+Ya decidido: la estructura de roles y el seed de Integraciones y Autenticación quedaron
+resueltos con la jerarquía de jefatura senior (ver "Jerarquía para evitar auto-aprobación"
+en Otras decisiones) — colaborador, jefatura, administrador y finanzas fake, cada uno con su
+`FakeEmployeeRecord` propio cuando también cobra kilometraje, vinculado a su `DirectoryAccount`
+por `LinkedEmployeeNationalId`.

@@ -13,10 +13,10 @@ se lleva físicamente a jefatura y luego a finanzas.
 | Viaje | Recorrido puntual hecho por el colaborador en una fecha específica, compuesto por la secuencia de tiendas que visitó. Se llama «recorrido» en el enunciado original del proyecto; acá se usa «viaje» para distinguirlo de la boleta completa, que puede agrupar varios. |
 | Tramo | Distancia registrada entre dos tiendas consecutivas dentro de un viaje. |
 | Tienda | Cada uno de los 40 puntos de la compañía entre los que puede darse un viaje. |
-| Colaborador | Empleado que registra viajes y cobra kilometraje. |
-| Jefatura | Responsable de aprobar o rechazar las boletas de los colaboradores a su cargo. |
-| Administrador | Mantiene la tabla de tarifas y la tabla de distancias entre tiendas. |
-| Finanzas | Recibe las boletas ya aprobadas, con el monto a cancelar. |
+| Colaborador | Empleado que registra viajes y cobra kilometraje. Una jefatura, el administrador o finanzas también son colaboradores para su propio kilometraje, además de su rol principal. |
+| Jefatura | Responsable de aprobar o rechazar las boletas de los colaboradores a su cargo; también puede armar y cobrar sus propias boletas, que aprueba otra jefatura designada (nunca puede aprobarse a sí misma). |
+| Administrador | Mantiene la tabla de tarifas y la tabla de distancias entre tiendas; también puede armar y cobrar sus propias boletas. |
+| Finanzas | Recibe las boletas ya aprobadas, con el monto a cancelar; también puede armar y cobrar sus propias boletas. |
 | ERP de RH | Sistema externo (simulado para la demo) que provee los datos del colaborador a partir de su cédula: jefatura, departamento, puesto, nombre y correo. |
 | AD | Directorio corporativo (simulado para la demo) que provee el correo institucional y sirve de inicio de sesión único (SSO) para el sistema. |
 | Tabla de tarifas | Tabla vigente que define el costo por kilómetro según tipo de transporte, antigüedad, cilindraje y combustible. «Tipo de transporte» y «tipo de vehículo» se usan como sinónimos en el enunciado original; acá se usa siempre «tipo de transporte». |
@@ -84,6 +84,11 @@ se lleva físicamente a jefatura y luego a finanzas.
     solo aplica a boletas creadas después del cambio.
 17. RN-17: Una cédula que el ERP de RH no reconoce (inexistente o inactiva) se rechaza de
     entrada, con mensaje claro, sin continuar el trámite.
+18. RN-18: Una jefatura, el administrador o finanzas pueden armar y cobrar boletas propias,
+    igual que cualquier colaborador (les aplican RN-1 a RN-17 sin excepción), pero nunca
+    pueden aprobar su propia boleta; en ese caso la aprueba otra jefatura designada para ese
+    fin (RN-10 sigue exigiendo aprobación de la jefatura correspondiente, que nunca coincide
+    con quien la envió).
 
 ## Qué queda registrado
 
@@ -148,6 +153,10 @@ mensaje claro y no continúa el trámite (RN-17).
 mientras hay boletas pendientes, esas boletas conservan la tarifa con la que se calcularon
 (RN-16).
 
+**Jefatura, administrador o finanzas como colaboradores:** siguen el mismo recorrido
+principal para su propio kilometraje (RN-18, RF-17); la única diferencia es a quién se le
+asigna la aprobación, que nunca es la misma persona que la envió.
+
 ## Requisitos funcionales
 
 1. RF-1: El sistema debe permitir a un colaborador iniciar una boleta y traer sus datos del
@@ -189,6 +198,12 @@ mientras hay boletas pendientes, esas boletas conservan la tarifa con la que se 
 16. RF-16: El inicio de sesión de jefatura, administrador, finanzas y colaborador debe
     hacerse contra el mismo directorio corporativo (AD, simulado) que provee el correo
     institucional — sin una credencial separada propia del sistema.
+17. RF-17: El sistema debe permitir que una jefatura, el administrador o finanzas armen,
+    editen, envíen y retiren sus propias boletas, y consulten su propio historial, con las
+    mismas reglas que un colaborador (RN-1 a RN-17); esas boletas las aprueba otra jefatura,
+    nunca quien las envió (RN-18).
+18. RF-18: El sistema debe permitir a una jefatura consultar, además de la cola de boletas
+    pendientes de su decisión, el historial de boletas que ya aprobó.
 
 ## Requisitos no funcionales
 
