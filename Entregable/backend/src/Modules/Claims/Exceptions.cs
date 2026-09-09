@@ -33,3 +33,5 @@ public sealed class MissingDistanceException(IReadOnlyList<(int OriginStoreId, i
 {
     public IReadOnlyList<(int OriginStoreId, int DestinationStoreId)> MissingLegs { get; } = missingLegs;
 }
+
+public sealed class EmptyClaimException() : Exception("La boleta no tiene ningún viaje.");

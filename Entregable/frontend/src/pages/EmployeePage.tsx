@@ -173,9 +173,7 @@ function NewClaimForm({ onCreated }: { onCreated: (claim: MileageClaimDto) => vo
     setLoading(true)
     try {
       const claim = await api.post<MileageClaimDto>('/mileage-claims', {
-        // El backend siempre usa la cédula del colaborador logueado (RN-17/RF-1): un
-        // colaborador no puede crear boletas a nombre de otra cédula. Este valor se ignora.
-        employeeNationalId: '',
+        // No se manda cédula: el backend siempre usa la del colaborador logueado (RN-17/RF-1).
         vehicleType,
         fuelType,
         plateNumber,

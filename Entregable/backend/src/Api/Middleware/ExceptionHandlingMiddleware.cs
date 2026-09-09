@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MileageClaims.Modules.Approvals.Abstractions;
 using MileageClaims.Modules.Claims;
+using MileageClaims.Modules.Distances.Services;
 using MileageClaims.Modules.Rates.Services;
 
 namespace MileageClaims.Api.Middleware;
@@ -57,9 +58,13 @@ public sealed class ExceptionHandlingMiddleware
         ForbiddenClaimAccessException => (StatusCodes.Status403Forbidden, new { message = ex.Message }),
         ApprovalNotOwnedException => (StatusCodes.Status403Forbidden, new { message = ex.Message }),
 
-        ArgumentException => (StatusCodes.Status400BadRequest, new { message = ex.Message }),
-        InvalidOperationException => (StatusCodes.Status400BadRequest, new { message = ex.Message }),
+        EmptyTripException => (StatusCodes.Status400BadRequest, new { message = ex.Message }),
+        EmptyClaimException => (StatusCodes.Status400BadRequest, new { message = ex.Message }),
 
+        // Deliberadamente NO hay un catch-all para ArgumentException/InvalidOperationException
+        // genéricos: esos tipos también los usan librerías internas (ej. el token JWT) para
+        // errores que no son de negocio y no deberían llegarle crudos al usuario. Cada mensaje
+        // que sí se expone tiene que venir de un tipo de excepción propio, declarado arriba.
         _ => (StatusCodes.Status500InternalServerError, new { message = "Ocurrió un error inesperado." })
     };
 }

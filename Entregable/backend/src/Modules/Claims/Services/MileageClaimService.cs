@@ -46,10 +46,10 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
 
     private DateOnly Today => DateOnly.FromDateTime(_clock.GetUtcNow().UtcDateTime);
 
-    public async Task<MileageClaimDto> Create(CreateMileageClaimRequest request, CancellationToken ct = default)
+    public async Task<MileageClaimDto> Create(string employeeNationalId, CreateMileageClaimRequest request, CancellationToken ct = default)
     {
-        var employee = await _erpRH.BuscarPorCedula(request.EmployeeNationalId, ct)
-                       ?? throw new EmployeeNotFoundException(request.EmployeeNationalId);
+        var employee = await _erpRH.BuscarPorCedula(employeeNationalId, ct)
+                       ?? throw new EmployeeNotFoundException(employeeNationalId);
 
         var claim = new MileageClaim
         {
@@ -162,7 +162,7 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
 
         if (claim.Trips.Count == 0)
         {
-            throw new InvalidOperationException("La boleta no tiene ningún viaje.");
+            throw new EmptyClaimException();
         }
 
         // Reintenta la distancia de los viajes incompletos por si el administrador ya cargó

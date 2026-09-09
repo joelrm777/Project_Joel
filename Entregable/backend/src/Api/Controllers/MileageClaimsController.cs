@@ -35,7 +35,7 @@ public sealed class MileageClaimsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<MileageClaimDto>> Create(CreateMileageClaimRequest request, CancellationToken ct)
     {
-        var claim = await _claims.Create(request with { EmployeeNationalId = NationalId }, ct);
+        var claim = await _claims.Create(NationalId, request, ct);
         return CreatedAtAction(nameof(Get), new { id = claim.Id }, claim);
     }
 

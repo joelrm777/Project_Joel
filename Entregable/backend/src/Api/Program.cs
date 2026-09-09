@@ -88,7 +88,11 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        // Los enums viajan como texto ("Car", "Approved") en toda la API, no como número —
+        // así lo espera la SPA (ver lib/types.ts) y así queda legible en NotificationLog.
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

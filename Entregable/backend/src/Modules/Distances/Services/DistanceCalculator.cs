@@ -5,6 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MileageClaims.Modules.Distances.Services;
 
+/// <summary>
+/// Tipo propio en vez de un ArgumentException genérico — así el middleware de errores de la
+/// Api puede exponer este mensaje con confianza, sin arriesgarse a filtrar el mensaje de
+/// cualquier otro ArgumentException interno (ej. de una librería) que no fue pensado para
+/// llegar al usuario.
+/// </summary>
+public sealed class EmptyTripException() : Exception("Un viaje necesita al menos dos tiendas.");
+
 public sealed class DistanceCalculator : IDistanceCalculator, IStoreAdmin, IStoreDistanceAdmin
 {
     private readonly AppDbContext _db;
@@ -18,7 +26,7 @@ public sealed class DistanceCalculator : IDistanceCalculator, IStoreAdmin, IStor
     {
         if (storeIdsInOrder.Count < 2)
         {
-            throw new ArgumentException("Un viaje necesita al menos dos tiendas.", nameof(storeIdsInOrder));
+            throw new EmptyTripException();
         }
 
         var legs = new List<LegAttempt>();

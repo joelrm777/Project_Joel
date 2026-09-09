@@ -10,6 +10,7 @@ public sealed class RateTableEntryConfiguration : IEntityTypeConfiguration<RateT
     {
         builder.ToTable("RateTable");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.RatePerKm).HasColumnType("decimal(18,4)");
         builder.HasIndex(x => new { x.VehicleType, x.FuelType, x.EngineDisplacementMin, x.EngineDisplacementMax, x.VehicleAgeYears });
     }

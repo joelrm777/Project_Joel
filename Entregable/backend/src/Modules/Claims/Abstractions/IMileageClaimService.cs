@@ -6,7 +6,7 @@ namespace MileageClaims.Modules.Claims.Abstractions;
 public interface IMileageClaimService
 {
     /// <summary>Crea la boleta (Draft) trayendo los datos del colaborador del ERP (RN-17) y declarando el vehículo (RN-4).</summary>
-    Task<MileageClaimDto> Create(CreateMileageClaimRequest request, CancellationToken ct = default);
+    Task<MileageClaimDto> Create(string employeeNationalId, CreateMileageClaimRequest request, CancellationToken ct = default);
 
     /// <summary>Solo mientras Draft o Pending (RN-8).</summary>
     Task<MileageClaimDto> UpdateVehicle(Guid claimId, string requestingEmployeeNationalId, UpdateVehicleRequest request, CancellationToken ct = default);

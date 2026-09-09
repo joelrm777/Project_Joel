@@ -33,7 +33,7 @@ autenticación JWT contra el AD simulado.
 
 | # | Pieza | Depende de | Estado |
 |---|---|---|---|
-| 1 | Recorrido principal completo (camino feliz) | — | código completo, sin verificar en vivo |
+| 1 | Recorrido principal completo (camino feliz) | — | **verificado en vivo** |
 | 2 | Bloqueo por falta de distancia entre tiendas | 1 | código completo, sin verificar en vivo |
 | 3 | Administrador mantiene tarifas y distancias | 1 | código completo, sin verificar en vivo |
 | 4 | Boleta con varios viajes, ventana de tiempo y duplicados | 1 | código completo, sin verificar en vivo |
@@ -97,11 +97,30 @@ Notificaciones (parcial).
   StoreDistance, RateTable, NotificationLog; estados Pending, Approved.
 
 **Evidencia**
-- 2026-09-08: código completo, `dotnet build` sin errores, migración inicial aplicable.
-  Falta correr el recorrido real (pendiente que el usuario configure el connection string
-  de Azure SQL en User Secrets) y falta un proyecto de pruebas automatizadas — ninguna de
-  las dos cosas bloquea seguir con el resto de piezas, pero quedan pendientes antes de
-  poder cerrar esta pieza como verificada de verdad.
+- 2026-09-09: **verificado en vivo, recorrido completo funcionando** (login de los 4 roles,
+  crear boleta, agregar viaje con cálculo de tarifa/distancia correcto, enviar, aprobar,
+  ver en finanzas). En el camino aparecieron y se corrigieron 5 bugs reales que el build no
+  detecta:
+  1. Middleware de errores exponía el mensaje crudo de cualquier `ArgumentException`/
+     `InvalidOperationException` no reconocido (incluida una excepción interna de la
+     librería de JWT) — se reemplazaron los usos de esas excepciones genéricas por tipos
+     propios (`EmptyTripException`, `EmptyClaimException`) y se sacó el catch-all genérico
+     de `ExceptionHandlingMiddleware`.
+  2. `CreateMileageClaimRequest.EmployeeNationalId` era un `string` no-nulable → ASP.NET
+     Core lo trataba como `[Required]` implícito y rechazaba el string vacío que mandaba el
+     frontend antes de que el controller lo pisara con la cédula de la sesión — se sacó el
+     campo del DTO (el servidor nunca lo necesitó).
+  3. Los enums viajaban como número por defecto en `System.Text.Json`, pero la SPA manda y
+     espera texto (`"Car"`, `"Approved"`) — se agregó `JsonStringEnumConverter` global en
+     `Program.cs`.
+  4. EF Core generaba `UPDATE` en vez de `INSERT` para `MileageClaim`/`Trip`/`Leg`/
+     `RateTableEntry`/`MileageClaimSummary`/`NotificationLog` nuevos, porque sus Id (Guid)
+     se asignan en código pero no estaban marcados `ValueGeneratedNever()` — EF no podía
+     distinguir "entidad nueva con Id ya puesto" de "entidad existente", y el `UPDATE`
+     afectaba 0 filas (`DbUpdateConcurrencyException`). Se agregó `ValueGeneratedNever()` a
+     los seis Id afectados.
+  5. La clave de firma JWT del usuario tenía 31 caracteres (248 bits); HS256 exige mínimo
+     256 bits — corregida por el usuario en User Secrets.
 
 ---
 
