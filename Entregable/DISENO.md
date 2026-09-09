@@ -112,6 +112,9 @@ implementación sin tocar a nadie más (RN-17, RF-16).
 **Responsabilidades**:
 - Despertar cada intervalo configurado (`TimerIntervalMinutes`) y preguntarle a Aprobación
   por vencidos de recordatorio, y a Boletas por rechazadas vencidas de descarte.
+- Exponer un disparo manual (`POST /api/admin/timer/run-once`, solo Administrador) para
+  poder probar o demostrar RN-13/RN-14 sin esperar el intervalo real — no es parte del
+  recorrido de negocio, es una herramienta operativa.
 
 **Límite con el resto**: no contiene ninguna regla de negocio — "qué es vencido" vive en
 Aprobación/Boletas.

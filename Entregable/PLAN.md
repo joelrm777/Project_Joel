@@ -33,16 +33,16 @@ autenticación JWT contra el AD simulado.
 
 | # | Pieza | Depende de | Estado |
 |---|---|---|---|
-| 1 | Recorrido principal completo (camino feliz) | — | código completo, sin verificar en vivo |
+| 1 | Recorrido principal completo (camino feliz) | — | **verificado en vivo** |
 | 2 | Bloqueo por falta de distancia entre tiendas | 1 | código completo, sin verificar en vivo |
 | 3 | Administrador mantiene tarifas y distancias | 1 | código completo, sin verificar en vivo |
 | 4 | Boleta con varios viajes, ventana de tiempo y duplicados | 1 | código completo, sin verificar en vivo |
 | 5 | Cédula no reconocida por el ERP | 1 | código completo, sin verificar en vivo |
 | 6 | Vigencia de tarifa: un cambio no afecta boletas ya calculadas | 1, 3 | verificado por revisión de código |
-| 7 | Edición y retiro de boleta mientras está pendiente | 1 | pendiente |
-| 8 | Rechazo de jefatura, corrección y reenvío | 1 | pendiente |
-| 9 | Temporizador: recordatorio sin respuesta y descarte automático | 1, 8 | pendiente |
-| 10 | Retención de 7 días, resumen de auditoría y reportes | 1 | pendiente |
+| 7 | Edición y retiro de boleta mientras está pendiente | 1 | código completo, sin verificar en vivo |
+| 8 | Rechazo de jefatura, corrección y reenvío | 1 | código completo (bug de reinicio de recordatorios corregido), sin verificar en vivo |
+| 9 | Temporizador: recordatorio sin respuesta y descarte automático | 1, 8 | código completo, sin verificar en vivo |
+| 10 | Retención de 7 días, resumen de auditoría y reportes | 1 | código completo, sin verificar en vivo |
 
 ## Detalle
 
@@ -97,11 +97,30 @@ Notificaciones (parcial).
   StoreDistance, RateTable, NotificationLog; estados Pending, Approved.
 
 **Evidencia**
-- 2026-09-08: código completo, `dotnet build` sin errores, migración inicial aplicable.
-  Falta correr el recorrido real (pendiente que el usuario configure el connection string
-  de Azure SQL en User Secrets) y falta un proyecto de pruebas automatizadas — ninguna de
-  las dos cosas bloquea seguir con el resto de piezas, pero quedan pendientes antes de
-  poder cerrar esta pieza como verificada de verdad.
+- 2026-09-09: **verificado en vivo, recorrido completo funcionando** (login de los 4 roles,
+  crear boleta, agregar viaje con cálculo de tarifa/distancia correcto, enviar, aprobar,
+  ver en finanzas). En el camino aparecieron y se corrigieron 5 bugs reales que el build no
+  detecta:
+  1. Middleware de errores exponía el mensaje crudo de cualquier `ArgumentException`/
+     `InvalidOperationException` no reconocido (incluida una excepción interna de la
+     librería de JWT) — se reemplazaron los usos de esas excepciones genéricas por tipos
+     propios (`EmptyTripException`, `EmptyClaimException`) y se sacó el catch-all genérico
+     de `ExceptionHandlingMiddleware`.
+  2. `CreateMileageClaimRequest.EmployeeNationalId` era un `string` no-nulable → ASP.NET
+     Core lo trataba como `[Required]` implícito y rechazaba el string vacío que mandaba el
+     frontend antes de que el controller lo pisara con la cédula de la sesión — se sacó el
+     campo del DTO (el servidor nunca lo necesitó).
+  3. Los enums viajaban como número por defecto en `System.Text.Json`, pero la SPA manda y
+     espera texto (`"Car"`, `"Approved"`) — se agregó `JsonStringEnumConverter` global en
+     `Program.cs`.
+  4. EF Core generaba `UPDATE` en vez de `INSERT` para `MileageClaim`/`Trip`/`Leg`/
+     `RateTableEntry`/`MileageClaimSummary`/`NotificationLog` nuevos, porque sus Id (Guid)
+     se asignan en código pero no estaban marcados `ValueGeneratedNever()` — EF no podía
+     distinguir "entidad nueva con Id ya puesto" de "entidad existente", y el `UPDATE`
+     afectaba 0 filas (`DbUpdateConcurrencyException`). Se agregó `ValueGeneratedNever()` a
+     los seis Id afectados.
+  5. La clave de firma JWT del usuario tenía 31 caracteres (248 bits); HS256 exige mínimo
+     256 bits — corregida por el usuario en User Secrets.
 
 ---
 
@@ -217,7 +236,7 @@ qué correos avisar por rol).
 - 2026-09-08: la ruta de código ya existía desde Pieza 1 (`FakeErpRH.BuscarPorCedula` filtra
   `IsActive`; `MileageClaimService.Create` lanza `EmployeeNotFoundException` → 404 antes de
   tocar la base). Se agregó a `IdentitySeeder` un colaborador inactivo de demo
-  (`ex.colaborador@automercado.test`, cédula `333333333`, cuenta AD activa pero ERP
+  (`ex.colaborador@retail.test`, cédula `333333333`, cuenta AD activa pero ERP
   inactivo) para poder disparar el caso real. De paso se corrigió una inconsistencia: el
   formulario de "Nueva boleta" dejaba escribir cualquier cédula, pero el backend siempre usa
   la del colaborador logueado — se sacó el campo (era un dato que el backend ignoraba) y se
@@ -273,9 +292,16 @@ qué correos avisar por rol).
 
 **Interfaces**
 - Consume: MileageClaim (pieza 1).
-- Produce: endpoints `PUT /api/mileage-claims/{id}`, `DELETE /api/mileage-claims/{id}`.
+- Produce: endpoints `PUT /api/mileage-claims/{id}/vehicle` (no `PUT /api/mileage-claims/{id}`
+  a secas — se separó para no ambiguar "reemplazar toda la boleta" con "editar el vehículo"),
+  `DELETE /api/mileage-claims/{id}`.
 
 **Evidencia**
+- 2026-09-08: backend ya cubría todo desde Pieza 1 (`LoadOwned` + `EnsureEditable` en
+  `UpdateVehicle`/`AddTrip`/`RemoveTrip`/`Withdraw`: 403 si no es dueño, 409 si no es
+  Draft/Pending/Rejected). Faltaba la UI: se agregó a `ClaimDetail` un panel de "Editar
+  vehículo" y un botón "Quitar" por viaje en la SPA. `npm run build` sin errores. Pendiente
+  verificación en vivo.
 
 ---
 
@@ -300,6 +326,15 @@ qué correos avisar por rol).
 - Produce: Status=Rejected, RejectionReason en MileageClaim — insumo de pieza 9.
 
 **Evidencia**
+- 2026-09-08: el flujo ya existía desde Pieza 1 (`ApprovalService.Reject` exige motivo antes
+  de tocar la boleta — `RejectionReasonRequiredException` → 400; `MarkRejected` solo actúa
+  si Status=Pending, RN-15; notifica al colaborador con el motivo). Al revisarlo para esta
+  pieza se encontró y corrigió un bug real en `MileageClaimService.Submit`: el reinicio de
+  `RemindersSent`/`LastReminderAt` estaba condicionado a `!wasRejected` — es decir, se
+  reiniciaba en el primer envío pero NO al reenviar tras un rechazo, dejando el contador de
+  recordatorios (RN-14) con datos viejos justo en el caso que esta pieza ejercita. Ahora se
+  reinicia siempre que hay un envío nuevo. `dotnet build` sin errores. Pendiente
+  verificación en vivo.
 
 ---
 
@@ -326,9 +361,20 @@ qué correos avisar por rol).
 **Interfaces**
 - Consume: MileageClaim.Status/SubmittedAt/DecidedAt (piezas 1, 8);
   SystemConfiguration.ReminderIntervalBusinessDays, TimerIntervalMinutes.
-- Produce: —
+- Produce: `POST /api/admin/timer/run-once` (nuevo — dispara un ciclo a mano, solo
+  Administrador, para probar/demostrar sin esperar el intervalo real).
 
 **Evidencia**
+- 2026-09-08: la lógica ya existía desde Pieza 1 (`ClaimLifecycleBackgroundService.RunOnce`,
+  `ApprovalService.ProcessOverdueReminders` con `BusinessDayCalculator`,
+  `IMileageClaimStatusUpdater.ProcessOverdueDiscards`). Se revisó `BusinessDaysBetween` a
+  mano (Mon→Mié = 2, Vie→Lun = 1, fines de semana no cuentan) — correcto. Se separó el
+  manejo de errores: `RunOnce` ya no traga excepciones (las deja subir), y es el bucle del
+  `BackgroundService` el que las atrapa para no morir (RNF-2); esto permite que un disparo
+  manual sepa si falló. Se agregó `POST /api/admin/timer/run-once` (backend) y un botón
+  "Forzar ciclo ahora" en `/admin` (SPA) para poder demostrar RN-13/RN-14 en la presentación
+  sin esperar horas. `dotnet build` y `npm run build` sin errores. Pendiente verificación en
+  vivo.
 
 ---
 
@@ -351,9 +397,15 @@ qué correos avisar por rol).
 
 **Interfaces**
 - Consume: MileageClaim con Status=Approved y FinanceReceivedAt (pieza 1).
-- Produce: endpoints `GET /api/reports/summary`, `GET /api/reports/mileage-claims/{id}`.
+- Produce: endpoints `GET /api/reports/summary` (filtra por `approverEmail`, no
+  `approverId` — se identifica jefatura por correo en todo el sistema, no por un id
+  separado), `GET /api/reports/mileage-claims/{id}`.
 
 **Evidencia**
+- 2026-09-08: la lógica ya existía desde Pieza 1 (`MileageClaimService.ProcessRetentionPurge`
+  guarda el resumen y borra el detalle; `ReportingService.GetSummary`/`GetById`). Faltaba la
+  UI: se agregó una sección "Reportes" a `/finanzas` en la SPA (filtro por jefatura/fecha,
+  totales y tabla de boletas). `npm run build` sin errores. Pendiente verificación en vivo.
 
 ## Cobertura
 

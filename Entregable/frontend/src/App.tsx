@@ -27,7 +27,7 @@ export default function App() {
       <Route
         path="/mis-boletas"
         element={
-          <ProtectedRoute role="Employee">
+          <ProtectedRoute roles={['Employee', 'Approver', 'Administrator', 'Finance']}>
             <EmployeePage />
           </ProtectedRoute>
         }
@@ -35,7 +35,7 @@ export default function App() {
       <Route
         path="/aprobaciones"
         element={
-          <ProtectedRoute role="Approver">
+          <ProtectedRoute roles={['Approver']}>
             <ApproverPage />
           </ProtectedRoute>
         }
@@ -43,7 +43,7 @@ export default function App() {
       <Route
         path="/finanzas"
         element={
-          <ProtectedRoute role="Finance">
+          <ProtectedRoute roles={['Finance']}>
             <FinancePage />
           </ProtectedRoute>
         }
@@ -51,7 +51,7 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute role="Administrator">
+          <ProtectedRoute roles={['Administrator']}>
             <AdminPage />
           </ProtectedRoute>
         }

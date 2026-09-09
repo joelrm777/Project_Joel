@@ -10,6 +10,7 @@ public sealed class NotificationLogConfiguration : IEntityTypeConfiguration<Noti
     {
         builder.ToTable("NotificationLog");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.RecipientEmail).IsRequired().HasMaxLength(320);
     }
 }

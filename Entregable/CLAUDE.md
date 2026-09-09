@@ -38,6 +38,27 @@ hermanas en la raíz del repo. No tocar `ferreteria-pos/`.
   ficticio solo para poder generar migraciones/scripts sin una base real — no confundir con
   el connection string de verdad, que vive únicamente en User Secrets.
 
+### Gotchas de este proyecto (encontrados verificando en vivo, no evidentes por el build)
+
+- **Toda entidad nueva con Id `Guid` asignado en código necesita
+  `builder.Property(x => x.Id).ValueGeneratedNever()`** en su `IEntityTypeConfiguration`. Sin
+  esto, EF Core no distingue "entidad nueva" de "entidad existente" cuando llega al tracker
+  por navegación (no por `Add()` directo) y genera un `UPDATE` que afecta 0 filas
+  (`DbUpdateConcurrencyException`). Ya aplicado a `MileageClaim`, `Trip`, `Leg`,
+  `RateTableEntry`, `MileageClaimSummary`, `NotificationLog` — replicar en cualquier entidad
+  nueva con Guid manual.
+- **Los enums viajan como texto en toda la API** (`JsonStringEnumConverter` registrado en
+  `Program.cs`), no como número — así lo espera la SPA. No sacar ese converter.
+- **`ExceptionHandlingMiddleware` nunca debe tener un catch genérico de
+  `ArgumentException`/`InvalidOperationException`** (ni de ningún tipo del BCL): esos tipos
+  también los usan librerías internas para errores que no son de negocio, y un catch-all
+  expondría su mensaje crudo al usuario. Cada mensaje que se expone tiene que venir de un
+  tipo de excepción propio del dominio.
+- Los DTO de request nunca deben tener un campo que el servidor vaya a ignorar/sobrescribir
+  (ej. una cédula que en realidad sale de la sesión) — si Nullable Reference Types está
+  activo, ASP.NET Core trata un `string` no-nulable como `[Required]` implícito y rechaza un
+  valor vacío antes de que el controller llegue a sobrescribirlo.
+
 **Documentos, en orden de autoridad:** `PROYECTO.md` (enunciado original) → `ESPECIFICACION.md`
 (requisitos, reglas de negocio RN-1..RN-17, qué se registra) → `DISENO.md` (arquitectura,
 componentes, modelo de datos) → `PLAN.md` (piezas de construcción, con su evidencia de cierre).

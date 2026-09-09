@@ -46,10 +46,10 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
 
     private DateOnly Today => DateOnly.FromDateTime(_clock.GetUtcNow().UtcDateTime);
 
-    public async Task<MileageClaimDto> Create(CreateMileageClaimRequest request, CancellationToken ct = default)
+    public async Task<MileageClaimDto> Create(string employeeNationalId, CreateMileageClaimRequest request, CancellationToken ct = default)
     {
-        var employee = await _erpRH.BuscarPorCedula(request.EmployeeNationalId, ct)
-                       ?? throw new EmployeeNotFoundException(request.EmployeeNationalId);
+        var employee = await _erpRH.BuscarPorCedula(employeeNationalId, ct)
+                       ?? throw new EmployeeNotFoundException(employeeNationalId);
 
         var claim = new MileageClaim
         {
@@ -162,7 +162,7 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
 
         if (claim.Trips.Count == 0)
         {
-            throw new InvalidOperationException("La boleta no tiene ningún viaje.");
+            throw new EmptyClaimException();
         }
 
         // Reintenta la distancia de los viajes incompletos por si el administrador ya cargó
@@ -200,17 +200,15 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
             throw new MissingDistanceException(missing);
         }
 
-        var wasRejected = claim.Status == MileageClaimStatus.Rejected;
         claim.RecalculateTotal();
         claim.Status = MileageClaimStatus.Pending;
         claim.SubmittedAt = _clock.GetUtcNow();
         claim.DecidedAt = null;
         claim.RejectionReason = null;
-        if (!wasRejected)
-        {
-            claim.RemindersSent = 0;
-            claim.LastReminderAt = null;
-        }
+        // SubmittedAt se acaba de reiniciar (primer envío o reenvío tras rechazo, RN-12) —
+        // el conteo de recordatorios (RN-14) arranca de cero contra la nueva fecha.
+        claim.RemindersSent = 0;
+        claim.LastReminderAt = null;
 
         await _db.SaveChangesAsync(ct);
 
@@ -255,6 +253,16 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
             .Include(c => c.Trips).ThenInclude(t => t.Legs)
             .Where(c => c.ApproverEmail == approverEmail && c.Status == MileageClaimStatus.Pending)
             .OrderBy(c => c.SubmittedAt)
+            .ToListAsync(ct);
+        return claims.Select(ToDto).ToList();
+    }
+
+    public async Task<IReadOnlyList<MileageClaimDto>> GetApprovedByApprover(string approverEmail, CancellationToken ct = default)
+    {
+        var claims = await _db.Set<MileageClaim>()
+            .Include(c => c.Trips).ThenInclude(t => t.Legs)
+            .Where(c => c.ApproverEmail == approverEmail && c.Status == MileageClaimStatus.Approved)
+            .OrderByDescending(c => c.DecidedAt)
             .ToListAsync(ct);
         return claims.Select(ToDto).ToList();
     }
