@@ -18,11 +18,57 @@ export function AdminPage() {
   return (
     <Layout title="Administración">
       <div className="space-y-8">
+        <TimerSection />
         <RateTableSection />
         <StoresSection />
         <StoreDistancesSection />
       </div>
     </Layout>
+  )
+}
+
+interface TimerCycleResult {
+  remindersSent: number
+  claimsDiscarded: number
+  claimsPurged: number
+}
+
+function TimerSection() {
+  const [result, setResult] = useState<TimerCycleResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function run() {
+    setBusy(true)
+    setError(null)
+    try {
+      setResult(await api.post<TimerCycleResult>('/admin/timer/run-once'))
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo correr el ciclo.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-neutral-200 bg-white p-6">
+      <h2 className="mb-2 text-lg font-semibold">Temporizador</h2>
+      <p className="mb-4 text-xs text-neutral-500">
+        Normalmente corre solo cada cierto intervalo. Este botón fuerza un ciclo ahora mismo
+        (recordatorios RN-14, descartes RN-13) — solo para probar/demostrar, no reemplaza el
+        ciclo automático.
+      </p>
+      <ErrorBanner message={error} />
+      <button onClick={run} disabled={busy} className="rounded-md bg-brand-green px-4 py-2 text-sm font-medium text-white hover:bg-brand-green-dark disabled:opacity-60">
+        {busy ? 'Corriendo…' : 'Forzar ciclo ahora'}
+      </button>
+      {result && (
+        <p className="mt-3 text-sm text-neutral-700">
+          {result.remindersSent} recordatorio(s), {result.claimsDiscarded} descarte(s),{' '}
+          {result.claimsPurged} boleta(s) purgada(s).
+        </p>
+      )}
+    </section>
   )
 }
 

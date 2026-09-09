@@ -56,6 +56,22 @@ export interface StoreDistance {
   distanceKm: number
 }
 
+export interface SummaryReportRow {
+  mileageClaimId: string
+  employeeName: string
+  totalAmount: number
+  submittedAt: string
+  decidedAt: string | null
+  status: string
+}
+
+export interface SummaryReport {
+  totalAmount: number
+  claimCount: number
+  averageProcessingHours: number | null
+  rows: SummaryReportRow[]
+}
+
 export interface RateTableEntry {
   id: string
   vehicleType: VehicleType

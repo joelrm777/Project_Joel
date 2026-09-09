@@ -200,17 +200,15 @@ public sealed class MileageClaimService : IMileageClaimService, IMileageClaimSta
             throw new MissingDistanceException(missing);
         }
 
-        var wasRejected = claim.Status == MileageClaimStatus.Rejected;
         claim.RecalculateTotal();
         claim.Status = MileageClaimStatus.Pending;
         claim.SubmittedAt = _clock.GetUtcNow();
         claim.DecidedAt = null;
         claim.RejectionReason = null;
-        if (!wasRejected)
-        {
-            claim.RemindersSent = 0;
-            claim.LastReminderAt = null;
-        }
+        // SubmittedAt se acaba de reiniciar (primer envío o reenvío tras rechazo, RN-12) —
+        // el conteo de recordatorios (RN-14) arranca de cero contra la nueva fecha.
+        claim.RemindersSent = 0;
+        claim.LastReminderAt = null;
 
         await _db.SaveChangesAsync(ct);
 
