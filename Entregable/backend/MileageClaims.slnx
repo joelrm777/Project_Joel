@@ -31,4 +31,7 @@
   <Folder Name="/src/Modules/Scheduling/">
     <Project Path="src/Modules/Scheduling/MileageClaims.Modules.Scheduling.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MileageClaims.Tests/MileageClaims.Tests.csproj" />
+  </Folder>
 </Solution>
